@@ -1,7 +1,7 @@
 #
 # Copyright (c) 2020 Carlos Fernández Sánchez and Raúl Caro Teixidó.
 #
-# This file is part of Mística 
+# This file is part of Mística
 # (see https://github.com/IncideDigital/Mistica).
 #
 # This program is free software: you can redistribute it and/or modify
@@ -50,6 +50,7 @@ class tcplisten(ServerOverlay):
     def parseArguments(self, args):
         self.port = int(args.port[0])
         self.address = args.address[0]
+        self.persist = args.persist
 
     def captureTcpStream(self):
     	# Create socket and listen
@@ -63,7 +64,7 @@ class tcplisten(ServerOverlay):
                 self.conn, self.remoteaddr = self.socket.accept()
 
             except socket.timeout as te:
-                pass  # Allows to check if the application has exited to finish the thread
+                continue  # Allows to check if the application has exited to finish the thread
             except Exception as e:
                 print(e)
                 self.inbox.put(Message('input',
@@ -73,39 +74,45 @@ class tcplisten(ServerOverlay):
                                           MessageType.SIGNAL,
                                           SignalType.TERMINATE))
                 return
-        # Empty buffered data, if any
-        while self.buffer and not self.exit:
-            self.conn.send(self.buffer.pop(0))
-        # socket loop
-        while not self.exit:
-            try:
-                # Block on socket
-                result = select.select([self.conn], [], [], self.timeout)
-                if result[0]:
-                    rawdata = self.conn.recv(4096)
-                    if rawdata and len(rawdata) > 0:
-                        self.inbox.put(Message('input',
-                                                  0,
-                                                  'overlay',
-                                                  self.id,
-                                                  MessageType.STREAM,
-                                                  rawdata))
-                    else:
-                        self._LOGGING_ and self.logger.debug("[MísticaServer] TCP communication broken. Sending Terminate signal to overlay")
-                        self.inbox.put(Message('input',
-                                                  0,
-                                                  self.name,
-                                                  self.id,
-                                                  MessageType.SIGNAL,
-                                                  SignalType.TERMINATE))
-            except Exception as e:
-                self._LOGGING_ and self.logger.debug(f"[MísticaServer] Exception: {e}. Sending Terminate signal to overlay")
-                self.inbox.put(Message('input',
-                                          0,
-                                          self.name,
-                                          self.id,
-                                          MessageType.SIGNAL,
-                                          SignalType.TERMINATE))
+            # Empty buffered data, if any
+            while self.buffer2 and not self.exit:
+                self.conn.send(self.buffer2.pop(0))
+            # socket loop
+            while not self.exit:
+                try:
+                    # Block on socket
+                    result = select.select([self.conn], [], [], self.timeout)
+                    if result[0]:
+                        rawdata = self.conn.recv(4096)
+                        if rawdata and len(rawdata) > 0:
+                            self.inbox.put(Message('input',
+                                                      0,
+                                                      'overlay',
+                                                      self.id,
+                                                      MessageType.STREAM,
+                                                      rawdata))
+                        elif not self.persist:
+                            self._LOGGING_ and self.logger.debug(f"[{self.name}] TCP communication broken. Sending Terminate signal to overlay")
+                            self.inbox.put(Message('input',
+                                                      0,
+                                                      self.name,
+                                                      self.id,
+                                                      MessageType.SIGNAL,
+                                                      SignalType.TERMINATE))
+                            return
+                        else:
+                            self.conn.close()
+                            self.conn = None
+                            break
+                except Exception as e:
+                    self._LOGGING_ and self.logger.debug(f"[{self.name}] Exception: {e}. Sending Terminate signal to overlay")
+                    self.inbox.put(Message('input',
+                                              0,
+                                              self.name,
+                                              self.id,
+                                              MessageType.SIGNAL,
+                                              SignalType.TERMINATE))
+                    return
         return
 
     def processInputStream(self, content):

@@ -25,6 +25,12 @@
 				"required": true,
 				"action": "store"
 			}
-		}
+		},
+			{
+				"--persist": {
+					"help": "Retries the TCP connection, if closed",
+					"action": "store_true"
+				}
+			}
 	]
 }

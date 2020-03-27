@@ -25,6 +25,12 @@
 				"required": true,
 				"action": "store"
 			}
-		}
+		},
+			{
+				"--persist": {
+					"help": "Keeps the port open after closing the TCP connection",
+					"action": "store_true"
+				}
+			}
 	]
 }

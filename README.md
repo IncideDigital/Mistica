@@ -39,8 +39,6 @@ If you don't want to install python on your system, you can use one of the follo
 - https://www.anaconda.com/distribution/#download-section (for Windows, Linux and macOS)
 - https://github.com/winpython/winpython/releases/tag/2.1.20190928 (only for Windows)
 
-> Remember: python >= 3.6 for the client and python >= 3.7 for the server
-
 ## Current modules
 
 Overlay modules:

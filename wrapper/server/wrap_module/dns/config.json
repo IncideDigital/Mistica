@@ -1,0 +1,40 @@
+{
+    "prog": "dns",
+    "wrapserver": "dnsserver",
+    "description": "Encodes/Decodes data in DNS queries/responses using different methods",
+    "args": [
+        {
+            "--domains": {
+                "help": "Domain names to accept packets. (Ex: mistica.dev)",
+                "nargs": "*",
+                "default": ["mistica.dev"],
+                "type": "str"
+            },
+            "--ttl": {
+                "help": "TTL of DNS Response",
+                "nargs": 1,
+                "default": [300],
+                "type" :  "int"
+            },
+            "--queries": {
+                "help": "Type of DNS Query (NS,CNAME,SOA,MX,TXT) not supported (A,AAAA) yet",
+                "nargs": "*",
+                "default": ["TXT"],
+                "choices": ["NS","CNAME","SOA","MX","TXT"],
+                "type": "str"
+            },
+            "--max-size": {
+                "help": "Maximum size in bytes of the sotp packet to be embedded in the dns packet. Not recommended change it (8 sotp_header + 37 raw_data = 45 rc4 = 60 b64 < 63 max_idna)",
+                "nargs": 1,
+                "default": [37],
+                "type" :  "int"
+            },
+            "--max-retries": {
+                "help": "Maximum number of re-synchronization retries.",
+                "nargs": 1,
+                "default": [5],
+                "type":  "int"
+            }
+        }
+    ]
+}

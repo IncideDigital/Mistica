@@ -1,0 +1,32 @@
+{
+    "prog": "dnsserver",
+    "description": "Simple DNS server",
+    "args": [
+        {
+            "--hostname": {
+                "help": "Hostname or IP address. Default is localhost",
+                "nargs": 1,
+                "default": ["localhost"],
+                "type": "str"
+            },
+            "--port": {
+                "help": "Port where the server will listen. Default is 5355",
+                "nargs": 1,
+                "default": [5355],
+                "type" :  "int"
+            },
+            "--ttl": {
+                "help": "TTL of DNS Responses",
+                "nargs": 1,
+                "default": [300],
+                "type" :  "int"
+            },
+            "--timeout": {
+                "help": "Max time in seconds that the server will wait for the SOTP layer to reply, before returning an error. Default is 3",
+                "nargs": 1,
+                "default": [3],
+                "type" :  "int"
+            }
+        }
+    ]
+}

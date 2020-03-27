@@ -1,0 +1,14 @@
+{
+    "prog": "shell",
+    "description": "Executes commands recieved through the SOTP connection and returns the output. Compatible with io module.",
+    "args": [
+        {
+            "--tag": {
+              "help": "Tag used by the overlay at the server",
+              "nargs": 1,
+              "required": false,
+              "default": ["0x1010"]
+            }
+        }
+    ]
+}

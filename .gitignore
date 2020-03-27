@@ -1,0 +1,11 @@
+*.pyc
+__pycache__
+*.log
+wiki
+.vscode
+build
+dist
+*.bin
+*.zip
+docs
+tests

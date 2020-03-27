@@ -1,0 +1,36 @@
+{
+    "prog": "httpserver",
+    "description": "Simple HTTP Server",
+    "args": [
+        {
+            "--hostname": {
+                "help": "Hostname or IP address. Default is localhost",
+                "nargs": 1,
+                "default": ["localhost"],
+                "type": "str"
+            },
+            "--port": {
+                "help": "Port where the server will listen. Default is 8080",
+                "nargs": 1,
+                "default": [8080],
+                "type" :  "int"
+            },
+            "--timeout": {
+                "help": "Max time, in seconds, that the server will wait for the SOTP layer to reply, before returning an error. Default is 5",
+                "nargs": 1,
+                "default": [5],
+                "type" :  "int"
+            },
+            "--error-file": {
+                "help": "HTML File for custom error page when timeout expires.",
+                "nargs": 1,
+                "type": "str"
+            },
+            "--error-code": {
+                "help": "HTTP Code for custom http code when timeout expires.",
+                "nargs": 1,
+                "type": "int"
+            }
+        }
+    ]
+}

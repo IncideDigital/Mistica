@@ -20,7 +20,7 @@
 from sotp.misticathread import ClientOverlay
 from sys import stdout
 import socket
-from threading import Thread
+from threading import Thread, Lock
 from utils.messaging import Message, MessageType, SignalType
 import select
 
@@ -39,17 +39,23 @@ class tcpconnect(ClientOverlay):
         self.hasInput = False
         self.id = 0
         self.timeout = 1
+        self.started = False
+        self.lock = Lock()
         # Logger parameters
         self.logger = logger
         self._LOGGING_ = False if logger is None else True
         self.tcpthread = Thread(target=self.captureTcpStream)
-        self.tcpthread.start()
+        self.lock.acquire()
+        if not self.wait:
+            self.tcpthread.start()
+            self.started = True
 
     # Overriden
     def parseArguments(self, args):
         self.port = int(args.port[0])
         self.address = args.address[0]
         self.persist = args.persist
+        self.wait = args.wait
 
     def captureTcpStream(self):
     	# Create socket and connect
@@ -65,7 +71,11 @@ class tcpconnect(ClientOverlay):
                                           self.id,
                                           MessageType.SIGNAL,
                                           SignalType.TERMINATE))
+                if self.lock.locked():
+                    self.lock.release()
                 return
+            if self.lock.locked():
+                self.lock.release()
             while not self.exit:
                 try:
                     # Block on socket until Timeout
@@ -107,4 +117,11 @@ class tcpconnect(ClientOverlay):
 
     def processSOTPStream(self, content):
         self._LOGGING_ and self.logger.debug(f"[{self.name}] Write to socket: {len(content)}")
-        self.socket.send(content)
+        if not self.started:
+            self.tcpthread.start()
+            self.lock.acquire()
+            self.started = True
+        try:
+            self.socket.send(content)
+        except Exception as e:
+            print(e)

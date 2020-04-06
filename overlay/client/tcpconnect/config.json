@@ -31,6 +31,12 @@
 					"help": "Retries the TCP connection, if closed",
 					"action": "store_true"
 				}
+			},
+			{
+				"--wait": {
+					"help": "Waits until data is received through the SOTP channel to connect",
+					"action": "store_true"
+				}
 			}
 	]
 }

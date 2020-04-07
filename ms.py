@@ -2,7 +2,7 @@
 #
 # Copyright (c) 2020 Carlos Fernández Sánchez and Raúl Caro Teixidó.
 #
-# This file is part of Mística 
+# This file is part of Mística
 # (see https://github.com/IncideDigital/Mistica).
 #
 # This program is free software: you can redistribute it and/or modify
@@ -171,7 +171,8 @@ class MisticaServer():
             omitem.start()
             self.Router.overlayModules.append(omitem)
             targetoverlay = self.Router.overlayModules[0]
-            self.captureInput(targetoverlay)
+            if targetoverlay.hasInput:
+                self.captureInput(targetoverlay)
             self.Router.join()
             self._LOGGING_ and self.logger.debug("[MísticaServer] Terminated")
         elif self.mode == MisticaMode.MULTI:

@@ -202,7 +202,13 @@ class MisticaClient(object):
                 self.captureInput()
             else:
                 signal(SIGINT, self.captureExit)
-            sotpThread.join()
+            # Crappy loop for windows
+            if system() == 'Windows':
+                while not self.overlay.exit:
+                    sleep(0.5)
+            # Nice sync primitive for unix
+            else:
+                sotpThread.join()
         except Exception as e:
             self._LOGGING_ and self.logger.exception(f"Exception at run(): {e}")
         finally:

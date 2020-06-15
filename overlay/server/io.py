@@ -17,15 +17,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
+
 from sotp.misticathread import ServerOverlay
 from sys import stdout
 
 
-def getInstance(id, qsotp, mode, args, logger):
-    return io(id, qsotp, mode, args, logger)
-
-
 class io(ServerOverlay):
+    
+    NAME = "io"
 
     def __init__(self, id, qsotp, mode, args, logger):
         ServerOverlay.__init__(self, type(self).__name__, id, qsotp, mode, args, logger)

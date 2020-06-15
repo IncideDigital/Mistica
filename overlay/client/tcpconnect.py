@@ -24,12 +24,9 @@ from threading import Thread, Lock
 from utils.messaging import Message, MessageType, SignalType
 import select
 
-
-def getInstance(qsotp, mode, args, logger):
-    return tcpconnect(qsotp, mode, args, logger)
-
-
 class tcpconnect(ClientOverlay):
+
+    NAME = "tcpconnect"
 
     def __init__(self, qsotp, mode, args, logger):
         ClientOverlay.__init__(self, type(self).__name__, qsotp, mode, args, logger)

@@ -20,12 +20,9 @@
 from sotp.misticathread import ClientOverlay
 from sys import stdout
 
-
-def getInstance(qsotp, qdata, args, logger):
-    return io(qsotp, qdata, args, logger)
-
-
 class io(ClientOverlay):
+
+    NAME = "io"
 
     def __init__(self, qsotp, qdata, args, logger=None):
         ClientOverlay.__init__(self,type(self).__name__,qsotp,qdata,args,logger)

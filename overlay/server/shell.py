@@ -21,13 +21,10 @@ from sotp.misticathread import ServerOverlay
 from subprocess import Popen,PIPE,STDOUT
 from platform import system
 
-
-def getInstance(id, qsotp, mode, args, logger):
-    return shell(id, qsotp, mode, args, logger)
-
-
 class shell(ServerOverlay):
 
+    NAME = "shell"
+    
     def __init__(self, id, qsotp, mode, args, logger):
         ServerOverlay.__init__(self, type(self).__name__, id, qsotp, mode, args, logger)
         self.name = type(self).__name__

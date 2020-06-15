@@ -683,6 +683,8 @@ class SimpleDnsClient(object):
 
 
 class dns(ClientWrapper):
+
+    NAME = "dns"
     
     MAX_RFC_DOMAIN_LEN = 255                 # see rfc1035 
     MAX_DOMAIN_LEN = MAX_RFC_DOMAIN_LEN - 2  # external dotted-label specification

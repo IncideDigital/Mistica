@@ -27,6 +27,8 @@ def getInstance(qsotp, args, logger):
 
 class http(ClientWrapper):
 
+    NAME = "http"
+
     def __init__(self, qsotp, args, logger):
         ClientWrapper.__init__(self,type(self).__name__,qsotp,logger)
         self.name = type(self).__name__

@@ -149,7 +149,9 @@ class httpserverHandler(BaseHTTPRequestHandler):
 
 
 class httpserver(Thread,BaseHTTPRequestHandler):
-
+    
+    NAME = "httpserver"
+    
     def __init__(self, id, args, logger):
         Thread.__init__(self)
         self.wrappers = []

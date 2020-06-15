@@ -22,11 +22,9 @@ from subprocess import Popen,PIPE,STDOUT
 from platform import system
 
 
-def getInstance(qsotp, qdata, args, logger):
-    return shell(qsotp, qdata, args, logger)
-
-
 class shell(ClientOverlay):
+
+    NAME = "shell"
 
     def __init__(self, qsotp, qdata, args, logger=None):
         ClientOverlay.__init__(self,type(self).__name__,qsotp,qdata,args,logger)

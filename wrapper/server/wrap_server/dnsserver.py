@@ -108,6 +108,8 @@ class WrapDNSServer(ThreadingUDPServer):
 
 class dnsserver(Thread):
 
+    NAME = "dnsserver"
+
     def __init__(self, id, args, logger):
         Thread.__init__(self)
         self.wrappers = []

@@ -22,20 +22,15 @@ from base64 import urlsafe_b64encode,urlsafe_b64decode
 from dnslib import QTYPE, CLASS, RR
 from dnslib import DNSHeader, DNSRecord
 from dnslib import TXT, CNAME, MX, NS, SOA
-
-
-def getServerDependency():
-    return dnswrapper.SERVER_NAME
-
-def getInstance(id, qsotp, args, logger):
-    return dnswrapper(id, qsotp, args, logger)
-
+from wrapper.server.wrap_server.dnsserver import dnsserver
 
 class dnswrapper(ServerWrapper):
-    SERVER_NAME = "dnsserver"
+
+    SERVER_CLASS = dnsserver
+    NAME = "dns"
 
     def __init__(self, id, qsotp, args, logger):
-        ServerWrapper.__init__(self, id, "dns", qsotp, dnswrapper.SERVER_NAME, logger)
+        ServerWrapper.__init__(self, id, dnswrapper.NAME, qsotp, dnswrapper.SERVER_CLASS.NAME, logger)
         self.request = []
         # Module args
         self.domains = None

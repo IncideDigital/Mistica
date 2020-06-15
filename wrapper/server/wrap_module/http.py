@@ -19,20 +19,15 @@
 #
 from sotp.misticathread import ServerWrapper
 from base64 import urlsafe_b64encode,urlsafe_b64decode
-
-
-def getServerDependency():
-    return httpwrapper.SERVER_NAME
-
-def getInstance(id, qsotp, args, logger):
-    return httpwrapper(id, qsotp, args, logger)
-
+from wrapper.server.wrap_server.httpserver import httpserver
 
 class httpwrapper(ServerWrapper):
-    SERVER_NAME = "httpserver"
+
+    SERVER_CLASS = httpserver
+    NAME = "http"
 
     def __init__(self, id, qsotp, args, logger):
-        ServerWrapper.__init__(self, id, "http", qsotp, httpwrapper.SERVER_NAME, logger)
+        ServerWrapper.__init__(self, id, httpwrapper.NAME, qsotp, httpwrapper.SERVER_CLASS.NAME, logger)
         # Module args
         self.method = None
         self.header = None

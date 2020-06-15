@@ -25,12 +25,10 @@ from utils.messaging import Message, MessageType, SignalType
 import select
 
 
-def getInstance(id, qsotp, mode, args, logger):
-    return tcpconnect(id, qsotp, mode, args, logger)
-
-
 class tcpconnect(ServerOverlay):
 
+    NAME = "tcpconnect"
+    
     def __init__(self, id, qsotp, mode, args, logger):
         ServerOverlay.__init__(self, type(self).__name__, id, qsotp, mode, args, logger)
         self.name = type(self).__name__

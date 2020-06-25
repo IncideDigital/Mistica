@@ -25,6 +25,20 @@ from sys import stdout
 class io(ServerOverlay):
     
     NAME = "io"
+    CONFIG = {
+        "prog": NAME,
+        "description": "Reads from stdin, sends through SOTP connection. Reads from SOTP connection, prints to stdout",
+        "args": [
+            {
+                "--tag": {
+                    "help": "Tag used by the overlay",
+                    "nargs": 1,
+                    "required": False,
+                    "default": ["0x1010"]
+                }
+            }
+        ]
+    }
 
     def __init__(self, id, qsotp, mode, args, logger):
         ServerOverlay.__init__(self, type(self).__name__, id, qsotp, mode, args, logger)

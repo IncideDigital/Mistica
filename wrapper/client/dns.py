@@ -25,10 +25,6 @@ from collections import namedtuple
 from base64 import urlsafe_b64encode,urlsafe_b64decode
 from sotp.core import BYTE,Header,OptionalHeader,Sizes
 
-def getInstance(qsotp, args, logger):
-    return dns(qsotp, args, logger)
-
-
 class QTYPE(object):
     A = 1
     AAAA = 28 
@@ -685,6 +681,74 @@ class SimpleDnsClient(object):
 class dns(ClientWrapper):
 
     NAME = "dns"
+    CONFIG = {
+        "prog": NAME,
+        "description": "Encodes/Decodes data in DNS queries/responses using different methods.",
+        "args": [
+            {
+                "--domain": {
+                    "help": "Domain Name for querying (Ex: mistica.dev)",
+                    "nargs": 1,
+                    "default": ["mistica.dev"],
+                    "type": str
+                },
+                "--hostname": {
+                    "help": "Server Resolver Addresses (Ex: 8.8.8.8, 1.1.1.1, etc)",
+                    "nargs": "*",
+                    "default": ["127.0.0.1","1.1.1.1","8.8.8.8","8.8.4.4"],
+                    "type": str
+                },
+                "--port": {
+                    "help": "Server Resolver Port (Ex: 5355)",
+                    "nargs": 1,
+                    "default": [5355],
+                    "type":  int
+                },
+                "--query": {
+                    "help": "Type of DNS Query (NS,CNAME,SOA,MX,TXT) not supported (A,AAAA) yet",
+                    "nargs": 1,
+                    "default": ["TXT"],
+                    "choices": ["NS","CNAME","SOA","MX","TXT"],
+                    "type": str
+                },
+                "--query-timeout": {
+                    "help": "Timeout in second to wait for a socekt reply.",
+                    "nargs": 1,
+                    "default": [1],
+                    "type":  int
+                },
+                "--multiple": {
+                    "help": "Split sotp packet in multiple subdomain octects.",
+                    "action": "store_true"
+                },
+                "--max-size": {
+                    "help": "Maximum size in bytes of the sotp packet to be embedded in the dns packet. Not recommended change it (37 bytes for simple mode and 169 bytes for multiple mode, read doc for why)",
+                    "nargs": 1,
+                    "default": [37],
+                    "type":  int
+                },
+                "--poll-delay": {
+                    "help": "Time in seconds between pollings (in order not to saturate when not transmitting)",
+                    "nargs": 1,
+                    "default": [3],
+                    "type":  int
+                },
+                "--response-timeout": {
+                    "help": "Waiting time in seconds for wrapper data.",
+                    "nargs": 1,
+                    "default": [2],
+                    "type":  int
+                },
+                "--max-retries": {
+                    "help": "Maximum number of re-synchronization retries.",
+                    "nargs": 1,
+                    "default": [100],
+                    "type":  int
+                }
+            }
+        ]
+    }
+
     
     MAX_RFC_DOMAIN_LEN = 255                 # see rfc1035 
     MAX_DOMAIN_LEN = MAX_RFC_DOMAIN_LEN - 2  # external dotted-label specification
@@ -692,10 +756,9 @@ class dns(ClientWrapper):
 
     def __init__(self, qsotp, args, logger):
         ClientWrapper.__init__(self,type(self).__name__,qsotp,logger)
+        self.args = args
         self.name = type(self).__name__
         self.exit = False
-        # Generate argparse
-        self.argparser = self.generateArgParse(self.name)
         # Parse arguments
         self.domain = None
         self.hostname = None

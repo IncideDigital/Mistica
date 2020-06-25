@@ -28,6 +28,43 @@ import select
 class tcplisten(ServerOverlay):
     
     NAME = "tcplisten"
+    CONFIG = {
+        "prog": NAME,
+        "description": "Binds to TCP port. Reads from socket, sends through SOTP connection. Reads from SOTP connection, sends through socket.",
+        "args": [
+            {
+                "--tag": {
+                    "help": "Tag used by the overlay",
+                    "nargs": 1,
+                    "required": False,
+                    "default": ["0x1010"]
+                }
+            },
+            {
+                "--address": {
+                    "help": "Address where the module will bind",
+                    "nargs": 1,
+                    "required": True,
+                    "action": "store"
+                }
+            },
+            {
+                "--port": {
+                    "help": "Port where the module will bind",
+                    "nargs": 1,
+                    "required": True,
+                    "action": "store"
+                }
+            },
+                {
+                    "--persist": {
+                        "help": "Keeps the port open after closing the TCP connection",
+                        "action": "store_true"
+                    }
+                }
+        ]
+    }
+
     
     def __init__(self, id, qsotp, mode, args, logger):
         ServerOverlay.__init__(self, type(self).__name__, id, qsotp, mode, args, logger)

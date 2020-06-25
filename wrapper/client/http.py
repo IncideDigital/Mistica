@@ -22,32 +22,100 @@ from sotp.misticathread import ClientWrapper
 from http.client import HTTPConnection
 from base64 import urlsafe_b64encode,urlsafe_b64decode
 
-def getInstance(qsotp, args, logger):
-    return http(qsotp, args, logger)
-
 class http(ClientWrapper):
 
     NAME = "http"
+    CONFIG = {
+        "prog": NAME,
+        "description": "Encodes/Decodes data in HTTP requests/responses using different methods",
+        "args": [
+            {
+                "--hostname": {
+                    "help": "Hostname or IP address. Default is localhost",
+                    "nargs": 1,
+                    "default": ["localhost"],
+                    "type": str
+                },
+                "--port": {
+                    "help": "Server Port",
+                    "nargs": 1,
+                    "default": [8080],
+                    "type":  int
+                },
+                "--timeout": {
+                    "help": "HTTPConnection Timeout",
+                    "nargs": 1,
+                    "default": [5],
+                    "type":  int
+                },
+                "--method": {
+                    "help": "HTTP Method to use",
+                    "nargs": 1,
+                    "default": ["GET"],
+                    "choices": ["GET","POST"],
+                    "type": str
+                },
+                "--uri": {
+                    "help": "URI Path before embedded message. Default is '/'",
+                    "nargs": 1,
+                    "default": ["/"],
+                    "type": str
+                },
+                "--header": {
+                    "help": "Header field to embed the packets",
+                    "nargs": 1,
+                    "type": str
+                },
+                "--post-field": {
+                    "help": "Post param to embed the packet",
+                    "nargs": 1,
+                    "type": str
+                },
+                "--success-code": {
+                    "help": "HTTP Code for Success Connections. Default is 200",
+                    "nargs": 1,
+                    "default": [200],
+                    "choices": [100,101,102,200,201,202,203,204,205,206,207,
+                                208,226,300,301,302,303,304,305,306,307,308,
+                                400,401,402,403,404,405,406,407,408,409,410,
+                                411,412,413,414,415,416,417,418,421,422,423,
+                                424,426,428,429,431,500,501,502,503,504,505,
+                                506,507,508,510,511],
+                    "type":  int
+                },
+                "--max-size": {
+                    "help": "Maximum size in bytes of the SOTP packet. You can change it depending http method used (see rfc2616 page 69)",
+                    "nargs": 1,
+                    "default": [4096],
+                    "type":  int
+                },
+                "--poll-delay": {
+                    "help": "Time in seconds between pollings",
+                    "nargs": 1,
+                    "default": [5],
+                    "type":  int
+                },
+                "--response-timeout": {
+                    "help": "Waiting time in seconds for wrapper data.",
+                    "nargs": 1,
+                    "default": [3],
+                    "type":  int
+                },
+                "--max-retries": {
+                    "help": "Maximum number of re-synchronization retries.",
+                    "nargs": 1,
+                    "default": [20],
+                    "type":  int
+                }
+            }
+        ]
+    }
 
     def __init__(self, qsotp, args, logger):
         ClientWrapper.__init__(self,type(self).__name__,qsotp,logger)
+        self.args = args
         self.name = type(self).__name__
         self.exit = False
-        # Generate argparse
-        self.argparser = self.generateArgParse(type(self).__name__)
-        # Parse arguments
-        self.hostname = None
-        self.port = None
-        self.uri = None
-        self.method = None
-        self.header = None
-        self.post_field = None
-        self.success_code = None
-        # Base arguments
-        self.max_size = None
-        self.poll_delay = None
-        self.response_timeout = None
-        self.max_retries = None
         self.parseArguments(args)
         # Logger parameters
         self.logger = logger

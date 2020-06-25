@@ -20,10 +20,7 @@
 from threading import Thread
 from queue import Queue
 from utils.messaging import Message, MessageType, SignalType
-from json import load
 from argparse import ArgumentParser
-from utils.prompt import Prompt
-
 
 class MisticaMode:
     SINGLE = 0
@@ -39,6 +36,18 @@ class MisticaThread(Thread):
         # Logger parameters
         self.logger = logger
         self._LOGGING_ = False if logger is None else True
+
+    def generateArgParser(self):
+        config = self.CONFIG
+
+        parser = ArgumentParser(prog=config["prog"],description=config["description"])
+        for arg in config["args"]:
+            for name,field in arg.items():
+                opts = {}
+                for key,value in field.items():
+                    opts[key] = value
+                parser.add_argument(name, **opts)
+        return parser
 
     def handleMessage(self, msg):
         answer = None
@@ -84,7 +93,7 @@ class ClientOverlay(MisticaThread):
         self.qdata = qdata
         self.hasInput = False
         # Generate argparse and parse args
-        self.argparser = self.generateArgParse(name)
+        self.argparser = self.generateArgParser()
         self.args = self.argparser.parse_args(args.split())
         self.parseArguments(self.args)
         # Get tag, by default, from args
@@ -138,23 +147,6 @@ class ClientOverlay(MisticaThread):
                 self.qdata.put(answer)
         pass
 
-    def generateArgParse(self, name):
-        filepath = f"./overlay/client/{name}/config.json"
-        config = ""
-        with open(filepath, 'r') as f:
-            config = load(f)
-
-        parser = ArgumentParser(prog=config["prog"],description=config["description"])
-        for arg in config["args"]:
-            for name,field in arg.items():
-                opts = {}
-                for key,value in field.items():
-                    if key == "type":
-                        value = Prompt.getType(value)
-                    opts[key] = value
-                parser.add_argument(name, **opts)
-        return parser
-
     # OVERRIDE ME
     def processInputStream(self, content):
         pass
@@ -173,6 +165,8 @@ class ClientWrapper(MisticaThread):
         # Logger parameters
         self.logger = logger
         self._LOGGING_ = False if logger is None else True
+        # Generate argparse
+        self.argparser = self.generateArgParser()
 
     def handleSignal(self, msg):
         if msg.isTerminateMessage():
@@ -202,23 +196,6 @@ class ClientWrapper(MisticaThread):
     def messageToWrapper(self, content):
         return Message(self.name, 0, "wrapper", 0, MessageType.STREAM, content)
 
-    def generateArgParse(self, name):
-        filepath = f"./wrapper/client/{name}/config.json"
-        config = ""
-        with open(filepath, 'r') as f:
-            config = load(f)
-
-        parser = ArgumentParser(prog=config["prog"],description=config["description"])
-        for arg in config["args"]:
-            for name,field in arg.items():
-                opts = {}
-                for key,value in field.items():
-                    if key == "type":
-                        value = Prompt.getType(value)
-                    opts[key] = value
-                parser.add_argument(name, **opts)
-        return parser
-
     # OVERRIDE ME
     def wrap(self, content):
         pass
@@ -237,7 +214,7 @@ class ServerOverlay(MisticaThread):
         self.qsotp = qsotp
         self.mode = mode
         # Generate argparse and parse args
-        self.argparser = self.generateArgParse(name)
+        self.argparser = self.generateArgParser()
         self.args = self.argparser.parse_args(args.split())
         self.parseArguments(self.args)
         # Get tag
@@ -325,23 +302,6 @@ class ServerOverlay(MisticaThread):
         elif answer.receiver == "router":
             self.qsotp.put(answer)
 
-    def generateArgParse(self, name):
-        filepath = f"./overlay/server/{name}/config.json"
-        config = ""
-        with open(filepath, 'r') as f:
-            config = load(f)
-
-        parser = ArgumentParser(prog=config["prog"],description=config["description"])
-        for arg in config["args"]:
-            for name,field in arg.items():
-                opts = {}
-                for key,value in field.items():
-                    if key == "type":
-                        value = Prompt.getType(value)
-                    opts[key] = value
-                parser.add_argument(name, **opts)
-        return parser
-
     # override me
     def processInputStream(self, content):
         pass
@@ -373,7 +333,7 @@ class ServerOverlay(MisticaThread):
 
 class ServerWrapper(MisticaThread):
 
-    def __init__(self, id, name, qsotp, servername, logger):
+    def __init__(self, id, name, qsotp, servername, args, logger):
         MisticaThread.__init__(self, name, logger)
         self.id = id
         self.servername = servername
@@ -381,6 +341,9 @@ class ServerWrapper(MisticaThread):
         # Logger parameters
         self.logger = logger
         self._LOGGING_ = False if logger is None else True
+        # Generate argparse
+        self.argparser = self.generateArgParser()
+        self.parseArguments(args)
 
     def handleSignal(self, msg):
         answer = None
@@ -434,20 +397,3 @@ class ServerWrapper(MisticaThread):
             return None
         else:
             return Message(self.name, self.id, self.servername, 0, MessageType.STREAM, content, wrapServerQ)
-
-    def generateArgParse(self, name):
-        filepath = f"./wrapper/server/wrap_module/{name}/config.json"
-        config = ""
-        with open(filepath, 'r') as f:
-            config = load(f)
-
-        parser = ArgumentParser(prog=config["prog"], description=config["description"])
-        for arg in config["args"]:
-            for name, field in arg.items():
-                opts = {}
-                for key, value in field.items():
-                    if key == "type":
-                        value = Prompt.getType(value)
-                    opts[key] = value
-                parser.add_argument(name, **opts)
-        return parser

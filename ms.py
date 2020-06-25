@@ -193,7 +193,7 @@ if __name__ == '__main__':
         if args.list == "all" or args.list == "overlays" or args.list == "wrappers":
             print(Prompt.listModules("server", args.list))
         else:
-            Prompt.listParameteres("server", args.list)
+            Prompt.listParameters("server", args.list)
         exit(0)
     elif args.modules:
         if args.key == "":

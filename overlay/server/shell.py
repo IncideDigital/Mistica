@@ -24,6 +24,21 @@ from platform import system
 class shell(ServerOverlay):
 
     NAME = "shell"
+    CONFIG = {
+        "prog": NAME,
+        "description": "Executes commands recieved through the SOTP connection and returns the output. Compatible with io module.",
+        "args": [
+            {
+                "--tag": {
+                "help": "Tag used by the overlay at the server",
+                "nargs": 1,
+                "required": False,
+                "default": ["0x1010"]
+                }
+            }
+        ]
+    }
+
     
     def __init__(self, id, qsotp, mode, args, logger):
         ServerOverlay.__init__(self, type(self).__name__, id, qsotp, mode, args, logger)

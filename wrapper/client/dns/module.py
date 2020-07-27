@@ -724,14 +724,14 @@ class dns(ClientWrapper):
             self._LOGGING_ and self.logger.debug_all(f"[{self.name}] checkMaxProtoSize() headerlen:{headerlen}, encmaxsizelen:{encmaxsizelen},domainlen+1:{domainlen},numpoints:{numpoints},totalen:{totalen}")
 
             if totalen > self.MAX_DOMAIN_LEN:
-                raise BaseException(f"Total Length is {totalen} and max available for this module is 253. Please, reduce max_size value or use a shorter domain")
+                raise BaseException(f"Total Length is {totalen} and max available for this module is {self.MAX_DOMAIN_LEN}. Please, reduce max_size value or use a shorter domain")
         else:
             headerlen = int(Sizes.HEADER/BYTE)
             totalen = len(urlsafe_b64encode(b'A' * (headerlen + max_size)))
             self._LOGGING_ and self.logger.debug_all(f"[{self.name}] checkMaxProtoSize() headerlen:{headerlen},max_size:{max_size},totalen:{totalen}")
 
             if totalen > self.MAX_SUBDOMAIN_LEN:
-                raise BaseException(f"Total Length is {totalen} and max available for this module is 63. Please, reduce max_size value or use --multiple parameter")
+                raise BaseException(f"Total Length is {totalen} and max available for this module is {self.MAX_SUBDOMAIN_LEN}. Please, reduce max_size value or use --multiple parameter")
 
     def parseArguments(self, args):
         args = self.argparser.parse_args(args.split())

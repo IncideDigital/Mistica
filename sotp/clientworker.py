@@ -411,8 +411,10 @@ class ClientWorker(Core):
     def signalEntry(self, data):
         response = []
         if data.isTerminateMessage():
-            if self.lastPacketRecv is not None:
+            self._LOGGING_ and self.logger.debug_all(f"[{self.name}] signalEntry() received a signal terminate")
+            if self.lastPacketRecv and self.sid:
                 termpacket = self.generateTerminatePacket(self.lastPacketRecv)
+                self._LOGGING_ and self.logger.debug_all(f"[{self.name}] signalEntry() coms active, so sending a termination request")
                 not self.comms_broken and response.append(Message("clientworker",0,self.wrappername,0,MessageType.STREAM,termpacket.toBytes()))
             response.append(Message("clientworker",0,self.wrappername,0,MessageType.SIGNAL,SignalType.TERMINATE))
             self.qdata.put(Message("clientworker",0,'datathread',0,MessageType.SIGNAL,SignalType.TERMINATE))
@@ -431,9 +433,10 @@ class ClientWorker(Core):
             self._LOGGING_ and self.logger.debug_all(f"[{self.name}] signalEntry() received a signal CommunicationBrokenMessage")
             response = self.lookForRetries()
         elif data.isBufferReady() and self.lastPacketSent is not None:
-            self._LOGGING_ and self.logger.debug(f"[{self.name}] Buffer Ready")
+            self._LOGGING_ and self.logger.debug_all(f"[{self.name}] signalEntry() received a signal Buffer Ready")
             if not self.transceiving:
                 self.transceiving = True
+                self._LOGGING_ and self.logger.debug_all(f"[{self.name}] signalEntry() not transceiving so generate a transfer packet")
                 dpacket = self.makeTransferPacket(self.lastPacketRecv)
                 response.append(Message("clientworker",0,self.wrappername,0,MessageType.STREAM,dpacket.toBytes()))
         else:
@@ -445,8 +448,10 @@ class ClientWorker(Core):
     def Entrypoint(self,data):
         try:
             if data.msgtype == MessageType.SIGNAL:
+                self._LOGGING_ and self.logger.debug_all(f"[{self.name}] passing a signal message to Entrypoint")
                 return self.signalEntry(data)
             else:
+                self._LOGGING_ and self.logger.debug_all(f"[{self.name}] passing a stream message to Entrypoint")
                 return self.streamEntry(data)
         except Exception as e:
             self._LOGGING_ and self.logger.exception(f"[{self.name}] Exception in Entrypoint: {e}")

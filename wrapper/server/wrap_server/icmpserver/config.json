@@ -1,0 +1,26 @@
+{
+    "prog": "icmpserver",
+    "description": "Simple ICMP Server",
+    "args": [
+        {
+            "--iface": {
+                "help": "Network interface to bind (Ex: eth0, wlp2s0, etc)",
+                "nargs": 1,
+                "type": "str",
+                "required": 1
+            },
+            "--timeout": {
+                "help": "Max time, in seconds, that the server will wait for the SOTP layer to reply, before returning an error. Default is 5",
+                "nargs": 1,
+                "default": [5],
+                "type" :  "int"
+            },
+            "--request-timeout": {
+                "help": "Max time, in seconds, that the server will wait blocked on raw socket",
+                "nargs": 1,
+                "default": [3],
+                "type" :  "int"
+            }
+        }
+    ]
+}

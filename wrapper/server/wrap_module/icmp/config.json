@@ -1,0 +1,21 @@
+{
+    "prog": "icmp",
+    "wrapserver": "icmpserver",
+    "description": "Encodes/Decodes data in ICMP echo requests/responses on data section",
+    "args": [
+        {
+            "--max-size": {
+                "help": "Max size of the SOTP packet. Default is 1024 bytes",
+                "nargs": 1,
+                "default": [1024],
+                "type":  "int"
+            },
+            "--max-retries": {
+                "help": "Maximum number of re-synchronization retries.",
+                "nargs": 1,
+                "default": [5],
+                "type":  "int"
+            }
+        }
+    ]
+}

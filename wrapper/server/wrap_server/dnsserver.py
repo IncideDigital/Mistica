@@ -22,14 +22,9 @@ from queue import Queue,Empty
 from utils.messaging import Message, MessageType, SignalType
 from dnslib import DNSRecord, DNSHeader, QTYPE, CLASS, RR, TXT
 from argparse import ArgumentParser
-from json import load
 from utils.prompt import Prompt
 from socketserver import ThreadingUDPServer
 from socketserver import BaseRequestHandler
-
-
-def getInstance(id, args, logger):
-    return dnsserver(id, args, logger)
 
 
 class CustomBaseRequestHandler(BaseRequestHandler):
@@ -108,6 +103,40 @@ class WrapDNSServer(ThreadingUDPServer):
 
 class dnsserver(Thread):
 
+    NAME = "dnsserver"
+    CONFIG = {
+        "prog": NAME,
+        "description": "Simple DNS server",
+        "args": [
+            {
+                "--hostname": {
+                    "help": "Hostname or IP address. Default is localhost",
+                    "nargs": 1,
+                    "default": ["localhost"],
+                    "type": str
+                },
+                "--port": {
+                    "help": "Port where the server will listen. Default is 5355",
+                    "nargs": 1,
+                    "default": [5355],
+                    "type" :  int
+                },
+                "--ttl": {
+                    "help": "TTL of DNS Responses",
+                    "nargs": 1,
+                    "default": [300],
+                    "type" :  int
+                },
+                "--timeout": {
+                    "help": "Max time in seconds that the server will wait for the SOTP layer to reply, before returning an error. Default is 3",
+                    "nargs": 1,
+                    "default": [3],
+                    "type" :  int
+                }
+            }
+        ]
+    }
+
     def __init__(self, id, args, logger):
         Thread.__init__(self)
         self.wrappers = []
@@ -116,11 +145,7 @@ class dnsserver(Thread):
         self.name = type(self).__name__
         self.inbox = Queue()
         # Argparsing
-        self.hostname = None
-        self.port = None
-        self.ttl = None
-        self.timeout = None
-        self.argparser = self.generateArgParse(self.name)
+        self.argparser = self.generateArgParser()
         self.parseArguments(args)
         # Logger parameters
         self.logger = logger
@@ -132,19 +157,15 @@ class dnsserver(Thread):
         self.port = parsed.port[0]
         self.ttl = parsed.ttl[0]
         self.timeout = parsed.timeout[0]
+    
+    def generateArgParser(self):
+        config = self.CONFIG
 
-    def generateArgParse(self, name):
-        filepath = f"./wrapper/server/wrap_server/{name}/config.json"
-        config = ""
-        with open(filepath, 'r') as f:
-            config = load(f)
         parser = ArgumentParser(prog=config["prog"],description=config["description"])
         for arg in config["args"]:
             for name,field in arg.items():
                 opts = {}
                 for key,value in field.items():
-                    if key == "type":
-                        value = Prompt.getType(value)
                     opts[key] = value
                 parser.add_argument(name, **opts)
         return parser

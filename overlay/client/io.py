@@ -20,12 +20,23 @@
 from sotp.misticathread import ClientOverlay
 from sys import stdout
 
-
-def getInstance(qsotp, qdata, args, logger):
-    return io(qsotp, qdata, args, logger)
-
-
 class io(ClientOverlay):
+
+    NAME = "io"
+    CONFIG = {
+        "prog": NAME,
+        "description": "Reads from stdin, sends through SOTP connection. Reads from SOTP connection, prints to stdout",
+        "args": [
+            {
+                "--tag": {
+                    "help": "Tag used by the overlay",
+                    "nargs": 1,
+                    "required": False,
+                    "default": ["0x1010"]
+                }
+            }
+        ]
+    }
 
     def __init__(self, qsotp, qdata, args, logger=None):
         ClientOverlay.__init__(self,type(self).__name__,qsotp,qdata,args,logger)

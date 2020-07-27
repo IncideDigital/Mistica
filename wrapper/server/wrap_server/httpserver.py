@@ -1,7 +1,7 @@
 #
 # Copyright (c) 2020 Carlos Fernández Sánchez and Raúl Caro Teixidó.
 #
-# This file is part of Mística 
+# This file is part of Mística
 # (see https://github.com/IncideDigital/Mistica).
 #
 # This program is free software: you can redistribute it and/or modify
@@ -18,17 +18,12 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
 from threading import Thread
-from queue import Queue,Empty
+from queue import Queue, Empty
 from utils.messaging import Message, MessageType, SignalType
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from argparse import ArgumentParser
-from json import load
 from utils.prompt import Prompt
 from cgi import FieldStorage
-
-
-def getInstance(id, args, logger):
-    return httpserver(id, args, logger)
 
 
 class WrapHTTPServer(ThreadingHTTPServer):
@@ -53,13 +48,13 @@ class httpserverHandler(BaseHTTPRequestHandler):
 
     def getDefaultErrorView(self):
         content = '<html><head><title>408 Request Timeout</title></head><body bgcolor="white"><center><h1>408 Request Timeout</h1></center><hr><center>nginx/1.5.10</center></body></html>'
-        return self.packRequest("",{"Server":"nginx 1.5.10"},content,408)
+        return self.packRequest("", {"Server": "nginx 1.5.10"}, content, 408)
 
     def readErrorFile(self):
         try:
             with open(self.server.error_file, "r") as errfile:
                 content = errfile.read()
-            return self.packRequest("",{"Server":"nginx 1.13.1"},content,self.server.error_code)
+            return self.packRequest("", {"Server": "nginx 1.13.1"}, content, self.server.error_code)
         except Exception:
             return self.getDefaultErrorView()
 
@@ -70,31 +65,31 @@ class httpserverHandler(BaseHTTPRequestHandler):
             return self.getDefaultErrorView()
 
     # Send the request message to all wrappers (just the right wrapper will process and make an answer).
-    def doMulticast(self,q,data):
+    def doMulticast(self, q, data):
         for wrap in self.server.wrappers:
             msg = Message(self.server.sname, self.server.sid, wrap.name, wrap.id,
-                MessageType.STREAM, data, q)
+                          MessageType.STREAM, data, q)
             wrap.inbox.put(msg)
 
-    def waitForResponse(self,q):
+    def waitForResponse(self, q):
         response = None
         try:
-            r = q.get(True,self.server.timeout)
+            r = q.get(True, self.server.timeout)
             response = r.content
-        except (Empty,Exception):
+        except (Empty, Exception):
             response = self.generateErrorView()
         finally:
             return response
 
     def packRequest(self, requestline, headers, content=None, httpcode=200):
         return {
-            "requestline" : requestline,
-            "headers" : headers,
-            "content" : content,
-            "httpcode" : httpcode
+            "requestline": requestline,
+            "headers": headers,
+            "content": content,
+            "httpcode": httpcode
         }
 
-    def returnResponse(self,res):
+    def returnResponse(self, res):
         self.protocol_version = "HTTP/1.1"
 
         if 'Server' in res['headers']:
@@ -109,8 +104,8 @@ class httpserverHandler(BaseHTTPRequestHandler):
 
         self.send_response(res['httpcode'])
 
-        for key,value in res['headers'].items():
-            self.send_header(key,value)
+        for key, value in res['headers'].items():
+            self.send_header(key, value)
 
         if res['content'] == "":
             self.end_headers()
@@ -124,31 +119,70 @@ class httpserverHandler(BaseHTTPRequestHandler):
 
     # Generate a Queue (for recieve responses *thread), send request to wrappers,
     # and wait for response from only one and return to HTTP Client.
-    def processRequest(self,request):
+    def processRequest(self, request):
         try:
             q = Queue()
-            self.doMulticast(q,request)
+            self.doMulticast(q, request)
             response = self.waitForResponse(q)
             self.returnResponse(response)
         except Exception as e:
-            self.server.logger.exception(f"[{self.server.sname}] Exception in handle: {e}")
+            self.server.logger.exception(
+                f"[{self.server.sname}] Exception in handle: {e}")
 
     def do_GET(self):
-        req = self.packRequest(self.requestline,self.headers)
+        req = self.packRequest(self.requestline, self.headers)
         self.processRequest(req)
 
     def do_POST(self):
         form = FieldStorage(
             fp=self.rfile,
             headers=self.headers,
-            environ={'REQUEST_METHOD':'POST',
-                     'CONTENT_TYPE':self.headers['Content-Type'],
+            environ={'REQUEST_METHOD': 'POST',
+                     'CONTENT_TYPE': self.headers['Content-Type'],
                      })
-        req = self.packRequest(self.requestline,self.headers, form)
+        req = self.packRequest(self.requestline, self.headers, form)
         self.processRequest(req)
 
 
-class httpserver(Thread,BaseHTTPRequestHandler):
+class httpserver(Thread, BaseHTTPRequestHandler):
+
+    NAME = "httpserver"
+    CONFIG = {
+        "prog": NAME,
+        "description": "Simple HTTP Server",
+        "args": [
+            {
+                "--hostname": {
+                    "help": "Hostname or IP address. Default is localhost",
+                    "nargs": 1,
+                    "default": ["localhost"],
+                    "type": str
+                },
+                "--port": {
+                    "help": "Port where the server will listen. Default is 8080",
+                    "nargs": 1,
+                    "default": [8080],
+                    "type":  int
+                },
+                "--timeout": {
+                    "help": "Max time, in seconds, that the server will wait for the SOTP layer to reply, before returning an error. Default is 5",
+                    "nargs": 1,
+                    "default": [5],
+                    "type":  int
+                },
+                "--error-file": {
+                    "help": "HTML File for custom error page when timeout expires.",
+                    "nargs": 1,
+                    "type": str
+                },
+                "--error-code": {
+                    "help": "HTTP Code for custom http code when timeout expires.",
+                    "nargs": 1,
+                    "type": int
+                }
+            }
+        ]
+    }
 
     def __init__(self, id, args, logger):
         Thread.__init__(self)
@@ -158,11 +192,23 @@ class httpserver(Thread,BaseHTTPRequestHandler):
         self.name = type(self).__name__
         self.inbox = Queue()
         # Argparsing
-        self.argparser = self.generateArgParse(self.name)
+        self.argparser = self.generateArgParser()
         self.parseArguments(args)
         # Logger parameters
         self.logger = logger
         self._LOGGING_ = False if logger is None else True
+        
+    def generateArgParser(self):
+        config = self.CONFIG
+
+        parser = ArgumentParser(prog=config["prog"],description=config["description"])
+        for arg in config["args"]:
+            for name,field in arg.items():
+                opts = {}
+                for key,value in field.items():
+                    opts[key] = value
+                parser.add_argument(name, **opts)
+        return parser
 
     def parseArguments(self, args):
         parsed = self.argparser.parse_args(args.split())
@@ -171,22 +217,6 @@ class httpserver(Thread,BaseHTTPRequestHandler):
         self.timeout = parsed.timeout[0]
         self.error_file = parsed.error_file[0] if parsed.error_file else None
         self.error_code = parsed.error_code[0] if parsed.error_code else None
-
-    def generateArgParse(self, name):
-        filepath = f"./wrapper/server/wrap_server/{name}/config.json"
-        config = ""
-        with open(filepath, 'r') as f:
-            config = load(f)
-        parser = ArgumentParser(prog=config["prog"],description=config["description"])
-        for arg in config["args"]:
-            for name,field in arg.items():
-                opts = {}
-                for key,value in field.items():
-                    if key == "type":
-                        value = Prompt.getType(value)
-                    opts[key] = value
-                parser.add_argument(name, **opts)
-        return parser
 
     def SignalThread(self):
         while True:

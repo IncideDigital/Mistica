@@ -19,31 +19,71 @@
 #
 from sotp.misticathread import ServerWrapper
 from base64 import urlsafe_b64encode,urlsafe_b64decode
-
-
-def getServerDependency():
-    return httpwrapper.SERVER_NAME
-
-def getInstance(id, qsotp, args, logger):
-    return httpwrapper(id, qsotp, args, logger)
-
+from wrapper.server.wrap_server.httpserver import httpserver
 
 class httpwrapper(ServerWrapper):
-    SERVER_NAME = "httpserver"
+
+    SERVER_CLASS = httpserver
+    NAME = "http"
+    CONFIG = {
+        "prog": "http",
+        "wrapserver": "httpserver",
+        "description": "Encodes/Decodes data in HTTP requests/responses using different methods",
+        "args": [
+            {
+                "--method": {
+                    "help": "HTTP Method to use",
+                    "nargs": 1,
+                    "default": ["GET"],
+                    "choices": ["GET","POST"],
+                    "type": str
+                },
+                "--uri": {
+                    "help": "URI Path before data message",
+                    "nargs": 1,
+                    "default": ["/"],
+                    "type": str
+                },
+                "--header": {
+                    "help": "Header key for encapsulate data message",
+                    "nargs": 1,
+                    "type": str
+                },
+                "--post-field": {
+                    "help": "Post Field for encapsulate data message",
+                    "nargs": 1,
+                    "type": str
+                },
+                "--success-code": {
+                    "help": "HTTP Code for Success Connections. Default is 200",
+                    "nargs": 1,
+                    "default": [200],
+                    "choices": [100,101,102,200,201,202,203,204,205,206,207,
+                                208,226,300,301,302,303,304,305,306,307,308,
+                                400,401,402,403,404,405,406,407,408,409,410,
+                                411,412,413,414,415,416,417,418,421,422,423,
+                                424,426,428,429,431,500,501,502,503,504,505,
+                                506,507,508,510,511],
+                    "type":  int
+                },
+                "--max-size": {
+                    "help": "Max size of the SOTP packet. Default is 10000 bytes",
+                    "nargs": 1,
+                    "default": [10000],
+                    "type":  int
+                },
+                "--max-retries": {
+                    "help": "Maximum number of re-synchronization retries.",
+                    "nargs": 1,
+                    "default": [5],
+                    "type":  int
+                }
+            }
+        ]
+    }
 
     def __init__(self, id, qsotp, args, logger):
-        ServerWrapper.__init__(self, id, "http", qsotp, httpwrapper.SERVER_NAME, logger)
-        # Module args
-        self.method = None
-        self.header = None
-        self.uri = None
-        self.post_field = None
-        # Base args
-        self.max_size = None
-        self.max_retries = None
-        # Parsing args
-        self.argparser = self.generateArgParse(self.name)
-        self.parseArguments(args)
+        ServerWrapper.__init__(self, id, httpwrapper.NAME, qsotp, httpwrapper.SERVER_CLASS.NAME, args,logger)
         # Logger parameters
         self.logger = logger
         self._LOGGING_ = False if logger is None else True

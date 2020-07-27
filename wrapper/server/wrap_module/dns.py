@@ -22,31 +22,56 @@ from base64 import urlsafe_b64encode,urlsafe_b64decode
 from dnslib import QTYPE, CLASS, RR
 from dnslib import DNSHeader, DNSRecord
 from dnslib import TXT, CNAME, MX, NS, SOA
-
-
-def getServerDependency():
-    return dnswrapper.SERVER_NAME
-
-def getInstance(id, qsotp, args, logger):
-    return dnswrapper(id, qsotp, args, logger)
-
+from wrapper.server.wrap_server.dnsserver import dnsserver
 
 class dnswrapper(ServerWrapper):
-    SERVER_NAME = "dnsserver"
+
+    SERVER_CLASS = dnsserver
+    NAME = "dns"
+    CONFIG = {
+        "prog": NAME,
+        "wrapserver": "dnsserver",
+        "description": "Encodes/Decodes data in DNS queries/responses using different methods",
+        "args": [
+            {
+                "--domains": {
+                    "help": "Domain names to accept packets. (Ex: mistica.dev)",
+                    "nargs": "*",
+                    "default": ["mistica.dev"],
+                    "type": str
+                },
+                "--ttl": {
+                    "help": "TTL of DNS Response",
+                    "nargs": 1,
+                    "default": [300],
+                    "type" :  int
+                },
+                "--queries": {
+                    "help": "Type of DNS Query (NS,CNAME,SOA,MX,TXT) not supported (A,AAAA) yet",
+                    "nargs": "*",
+                    "default": ["TXT"],
+                    "choices": ["NS","CNAME","SOA","MX","TXT"],
+                    "type": str
+                },
+                "--max-size": {
+                    "help": "Maximum size in bytes of the sotp packet to be embedded in the dns packet. Not recommended change it (8 sotp_header + 37 raw_data = 45 rc4 = 60 b64 < 63 max_idna)",
+                    "nargs": 1,
+                    "default": [37],
+                    "type" :  int
+                },
+                "--max-retries": {
+                    "help": "Maximum number of re-synchronization retries.",
+                    "nargs": 1,
+                    "default": [5],
+                    "type":  int
+                }
+            }
+        ]
+    }
 
     def __init__(self, id, qsotp, args, logger):
-        ServerWrapper.__init__(self, id, "dns", qsotp, dnswrapper.SERVER_NAME, logger)
+        ServerWrapper.__init__(self, id, dnswrapper.NAME, qsotp, dnswrapper.SERVER_CLASS.NAME, args, logger)
         self.request = []
-        # Module args
-        self.domains = None
-        self.ttl = None
-        self.query = None
-        # Base args
-        self.max_size = None
-        self.max_retries = None
-        # Parsing args
-        self.argparser = self.generateArgParse(self.name)
-        self.parseArguments(args)
         # Logger parameters
         self.logger = logger
         self._LOGGING_ = False if logger is None else True
@@ -58,6 +83,7 @@ class dnswrapper(ServerWrapper):
         self.queries = parsed.queries
         self.max_size = parsed.max_size[0]
         self.max_retries = parsed.max_retries[0]
+        
 
     def extractFromSubdomain(self, qname):
         reqhostname = qname.idna()[:-1]

@@ -17,8 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 #
-from os import walk, path
-from json import load, loads
+
+from sotp.misticathread import ClientOverlay, ClientWrapper, ServerOverlay, ServerWrapper
+from overlay.client import *
+from overlay.server import *
+#from wrapper.server.wrap_module import *
+from wrapper.client import *
 from argparse import ArgumentParser
 
 
@@ -29,26 +33,6 @@ class Prompt(object):
     def GetFromStdin(self):
         data = input(self.banner)
         return data
-
-    @staticmethod
-    def getDescription(filename):
-        with open(filename, "r") as fd:
-            return loads(fd.read())["description"]
-
-    @staticmethod
-    def getName(filename):
-        with open(filename, "r") as fd:
-            return loads(fd.read())["prog"]
-
-    @staticmethod
-    def getArgs(filename):
-        with open(filename, "r") as fd:
-            return loads(fd.read())["args"]
-
-    @staticmethod
-    def getWrapServer(filename):
-        with open(filename, "r") as fd:
-            return loads(fd.read())["wrapserver"]
 
     @staticmethod
     def listModules(type, lst):
@@ -63,33 +47,35 @@ class Prompt(object):
 
     @staticmethod
     def listOverlays(type):
+        if type == "server":
+            overlaylist = [x for x in ServerOverlay.__subclasses__()]
+        else:
+            overlaylist = [x for x in ClientOverlay.__subclasses__()]
         overlaydict = {}
-        for dirname, _, filenames in walk(f'overlay/{type}'):
-            for filename in filenames:
-                if filename == "config.json":
-                    name = Prompt.getName(path.join(dirname, filename))
-                    overlaydict[name] = Prompt.getDescription(path.join(dirname, filename))
+        for elem in overlaylist:
+            overlaydict[elem.NAME] = elem.CONFIG["description"]
         output = "\nOverlay modules:\n\n"
         for k in sorted(overlaydict):
             output = output + "- {}: {}\n".format(k, overlaydict[k])
         return output
 
+
     @staticmethod
     def listWrapModules(type):
+        if type == "server":
+            overlaylist = [x for x in ServerWrapper.__subclasses__()]
+        else:
+            overlaylist = [x for x in ClientWrapper.__subclasses__()]
         wmdict = {}
-        p = (type if type == "client" else "server/wrap_module")
-        for dirname, _, filenames in walk(f'wrapper/{p}'):
-            for filename in filenames:
-                if filename == "config.json":
-                    name = Prompt.getName(path.join(dirname, filename))
-                    wmdict[name] = Prompt.getDescription(path.join(dirname, filename))
+        for elem in overlaylist:
+            wmdict[elem.NAME] = elem.CONFIG["description"]
         output = "\nWrap modules:\n\n"
         for k in sorted(wmdict):
             output = output + "- {}: {}\n".format(k, wmdict[k])
         return output
 
     @staticmethod
-    def listParameteres(type, lst):
+    def listParameters(type, lst):
         module = Prompt.findModule(type, lst)
         if not module:
             return f"Module {lst} does not exist"
@@ -99,12 +85,11 @@ class Prompt(object):
         except SystemExit:
             pass
         try:
-            wsname = Prompt.getWrapServer(module)
+            ws = module.SERVER_CLASS
         except Exception:
-            wsname = None
-        if wsname:
-            print(f"\n{lst} uses {wsname} as wrap server\n")
-            ws = Prompt.findWrapServer(wsname)
+            ws = None
+        if ws:
+            print(f"\n{lst} uses {ws.NAME} as wrap server\n")
             argparser = Prompt.generateArgParser(ws)
             try:
                 argparser.parse_args(["-h"])
@@ -113,52 +98,30 @@ class Prompt(object):
 
     @staticmethod
     def findModule(type, lst):
-        for dirname, _, filenames in walk(f'overlay/{type}'):
-            for filename in filenames:
-                if filename == "config.json":
-                    name = Prompt.getName(path.join(dirname, filename))
-                    if name == lst:
-                        return path.join(dirname, filename)
-        p = (type if type == "client" else "server/wrap_module")
-        for dirname, _, filenames in walk(f'wrapper/{p}'):
-            for filename in filenames:
-                if filename == "config.json":
-                    name = Prompt.getName(path.join(dirname, filename))
-                    if name == lst:
-                        return path.join(dirname, filename)
+        if type == "server":
+            for x in ServerWrapper.__subclasses__():
+                if x.NAME == lst:
+                    return x
+            for x in ServerOverlay.__subclasses__():
+                if x.NAME == lst:
+                    return x
+        for x in ClientWrapper.__subclasses__():
+                if x.NAME == lst:
+                    return x
+        for x in ClientOverlay.__subclasses__():
+            if x.NAME == lst:
+                return x
         return None
-
+    
     @staticmethod
-    def findWrapServer(lst):
-        for dirname, _, filenames in walk('wrapper/server/wrap_server'):
-            for filename in filenames:
-                if filename == "config.json":
-                    name = Prompt.getName(path.join(dirname, filename))
-                    if name == lst:
-                        return path.join(dirname, filename)
+    def generateArgParser(module):
+        config = module.CONFIG
 
-    @staticmethod
-    def generateArgParser(filepath):
-        with open(filepath, 'r') as f:
-            config = load(f)
-
-        parser = ArgumentParser(prog=config["prog"], description=config["description"])
+        parser = ArgumentParser(prog=config["prog"],description=config["description"])
         for arg in config["args"]:
-            for name, field in arg.items():
+            for name,field in arg.items():
                 opts = {}
                 for key,value in field.items():
-                    if key == "type":
-                        value = Prompt.getType(value)
                     opts[key] = value
                 parser.add_argument(name, **opts)
         return parser
-
-    # For the arg parsers (we can't set "int" on json file because syntax)
-    @staticmethod
-    def getType(value):
-        if value == "int":
-            return int
-        elif value == "float":
-            return float
-        elif value == "str":
-            return str

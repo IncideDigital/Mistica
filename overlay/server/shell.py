@@ -21,13 +21,25 @@ from sotp.misticathread import ServerOverlay
 from subprocess import Popen,PIPE,STDOUT
 from platform import system
 
-
-def getInstance(id, qsotp, mode, args, logger):
-    return shell(id, qsotp, mode, args, logger)
-
-
 class shell(ServerOverlay):
 
+    NAME = "shell"
+    CONFIG = {
+        "prog": NAME,
+        "description": "Executes commands recieved through the SOTP connection and returns the output. Compatible with io module.",
+        "args": [
+            {
+                "--tag": {
+                "help": "Tag used by the overlay at the server",
+                "nargs": 1,
+                "required": False,
+                "default": ["0x1010"]
+                }
+            }
+        ]
+    }
+
+    
     def __init__(self, id, qsotp, mode, args, logger):
         ServerOverlay.__init__(self, type(self).__name__, id, qsotp, mode, args, logger)
         self.name = type(self).__name__

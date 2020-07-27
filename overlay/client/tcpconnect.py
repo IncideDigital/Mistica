@@ -24,12 +24,52 @@ from threading import Thread, Lock
 from utils.messaging import Message, MessageType, SignalType
 import select
 
-
-def getInstance(qsotp, mode, args, logger):
-    return tcpconnect(qsotp, mode, args, logger)
-
-
 class tcpconnect(ClientOverlay):
+
+    NAME = "tcpconnect"
+    CONFIG = {
+        "prog": NAME,
+        "description": "Connects to TCP port. Reads from socket, sends through SOTP connection. Reads from SOTP connection, sends through socket.",
+        "args": [
+            {
+                "--tag": {
+                    "help": "Tag used by the overlay",
+                    "nargs": 1,
+                    "required": False,
+                    "default": ["0x1010"]
+                }
+            },
+            {
+                "--address": {
+                    "help": "Address where the module will connect",
+                    "nargs": 1,
+                    "required": True,
+                    "action": "store"
+                }
+            },
+            {
+                "--port": {
+                    "help": "Port where the module will connect",
+                    "nargs": 1,
+                    "required": True,
+                    "action": "store"
+                }
+            },
+                {
+                    "--persist": {
+                        "help": "Retries the TCP connection, if closed",
+                        "action": "store_true"
+                    }
+                },
+                {
+                    "--wait": {
+                        "help": "Waits until data is received through the SOTP channel to connect",
+                        "action": "store_true"
+                    }
+                }
+        ]
+    }
+
 
     def __init__(self, qsotp, mode, args, logger):
         ClientOverlay.__init__(self, type(self).__name__, qsotp, mode, args, logger)

@@ -33,7 +33,9 @@ from signal import signal, SIGINT
 from utils.prompt import Prompt
 if system() != "Windows":
     from select import poll, POLLIN
-
+from sotp.misticathread import ClientOverlay, ClientWrapper
+from wrapper.client import *
+from overlay.client import *
 
 class MisticaClient(object):
 
@@ -68,8 +70,7 @@ class MisticaClient(object):
     def doWrapper(self):
         self.sem.acquire()
         self._LOGGING_ and self.logger.info(f"[Wrapper] Initializing...")
-        mpath = f"wrapper.client.{self.wrappername}.module"
-        self.wrapper = import_module(mpath).getInstance(self.qsotp, self.wrapperargs, self.logger)
+        self.wrapper = [x for x in ClientWrapper.__subclasses__() if x.NAME == self.wrappername][0](self.qsotp, self.wrapperargs, self.logger)
         self.wrapper.start()
         # setting sotp arguments depending on the wrapper to be used
         self.max_size = self.wrapper.max_size
@@ -142,8 +143,7 @@ class MisticaClient(object):
     def doOverlay(self):
         self.sem.acquire()
         self._LOGGING_ and self.logger.info(f"[Overlay] Initializing...")
-        mpath = f"overlay.client.{self.overlayname}.module"
-        self.overlay = import_module(mpath).getInstance(self.qsotp, self.qdata, self.overlayargs, self.logger)
+        self.overlay = [x for x in ClientOverlay.__subclasses__() if x.NAME == self.overlayname][0](self.qsotp, self.qdata, self.overlayargs, self.logger)
         self.overlay.start()
         # setting sotp arguments depending on the overlay to be used
         self.tag = self.overlay.tag
@@ -226,7 +226,6 @@ if __name__ == '__main__':
     parser.add_argument("-w", "--wrapper-args", action='store', required=False, default='', help="args for the selected overlay module")
     parser.add_argument("-o", "--overlay-args", action='store', required=False, default='', help="args for the selected wrapper module")
     parser.add_argument('-v', '--verbose', action='count', default=0, help="Level of verbosity in logger (no -v None, -v Low, -vv Medium, -vvv High)")
-
     args = parser.parse_args()
     moduleargs = {}
 
@@ -235,7 +234,7 @@ if __name__ == '__main__':
         if args.list == "all" or args.list == "overlays" or args.list == "wrappers":
             print(Prompt.listModules("client", args.list))
         else:
-            Prompt.listParameteres("client", args.list)
+            Prompt.listParameters("client", args.list)
         exit(0)
     elif args.modules:
         if args.key == "":

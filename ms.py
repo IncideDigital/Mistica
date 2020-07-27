@@ -31,7 +31,10 @@ from sys import exit, stdin
 from platform import system
 from select import poll, POLLIN
 from time import sleep
+from sotp.misticathread import ServerOverlay, ServerWrapper
 
+from wrapper.server.wrap_module import *
+from overlay.server import *
 
 class MisticaMode:
     SINGLE = 0
@@ -63,35 +66,20 @@ class MisticaServer():
             self.wrappername = self.args["wrapper"]
 
     # Checks if the wrap_server of a certain wrap_module is up and running.
-    def dependencyLaunched(self, name):
-        dname = self.getDependencyName(name)
+    def dependencyLaunched(self, wmitem):
+        dname = wmitem.SERVER_CLASS
         for elem in self.Router.wrapServers:
             if dname == elem.name:
                 return True
         return False
 
-    # Gets the name of the wrap_server associated to a wrap_module
-    def getDependencyName(self, name):
-        modulename = f'wrapper.server.wrap_module.{name}.module'
-        try:
-            module = import_module(modulename)
-        except Exception:
-            print(f"Failed to import module {name}")
-            return ""
-        return module.getServerDependency()
-
     # Returns a wrap_module, wrap_server or overlay module
     def getModuleInstance(self, type, name, args):
         self.procid += 1
         if (type == ModuleType.WRAP_MODULE):
-            mpath = f"wrapper.server.wrap_module.{name}.module"
-            return import_module(mpath).getInstance(self.procid, self.Router.inbox, args, self.logger)
-        elif (type == ModuleType.WRAP_SERVER):
-            mpath = f"wrapper.server.wrap_server.{name}.module"
-            return import_module(mpath).getInstance(self.procid, args, self.logger)
+            return [x for x in ServerWrapper.__subclasses__() if x.NAME == name][0](self.procid, self.Router.inbox, args, self.logger)
         else:
-            mpath = f"overlay.server.{name}.module"
-            return import_module(mpath).getInstance(self.procid, self.Router.inbox, self.mode, args, self.logger)
+            return [x for x in ServerOverlay.__subclasses__() if x.NAME == name][0](self.procid, self.Router.inbox, self.mode, args, self.logger)
 
     def sigintDetect(self, signum, frame):
         self._LOGGING_ and self.logger.info("[Sotp] SIGINT detected")
@@ -152,16 +140,13 @@ class MisticaServer():
             self.Router.wrapModules.append(wmitem)
 
             # Check wrap_server dependency of wrap_module and launch it
-            wsname = self.getDependencyName(self.wrappername)
-            if (not self.dependencyLaunched(self.wrappername)):
-                wsitem = self.getModuleInstance(ModuleType.WRAP_SERVER, wsname, self.args["wrap_server_args"])
+            if not self.dependencyLaunched(wmitem):
+                self.procid += 1
+                wsitem = wmitem.SERVER_CLASS(self.procid, self.args["wrap_server_args"], self.logger)
                 wsitem.start()
                 self.Router.wrapServers.append(wsitem)
             else:
-                for elem in self.Router.wrapServers:
-                    if wsname == elem.name:
-                        wsitem = elem
-                        break
+                wsitem = [elem for elem in self.Router.wrapServers if wsname == wmitem.SERVER_CLASS.NAME][0]               
 
             # add wrap_module to wrap_server list
             wsitem.addWrapModule(wmitem)
@@ -198,6 +183,7 @@ if __name__ == '__main__':
     parser.add_argument("-o", "--overlay-args", action='store', required=False, default='', help="args for the selected wrapper module (Single-handler mode)")
     parser.add_argument("-s", "--wrap-server-args", action='store', required=False, default='', help="args for the selected wrap server (Single-handler mode)")
     parser.add_argument('-v', '--verbose', action='count', default=0, help="Level of verbosity in logger (no -v None, -v Low, -vv Medium, -vvv High)")
+    
 
     args = parser.parse_args()
     moduleargs = {}
@@ -207,7 +193,7 @@ if __name__ == '__main__':
         if args.list == "all" or args.list == "overlays" or args.list == "wrappers":
             print(Prompt.listModules("server", args.list))
         else:
-            Prompt.listParameteres("server", args.list)
+            Prompt.listParameters("server", args.list)
         exit(0)
     elif args.modules:
         if args.key == "":

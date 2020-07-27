@@ -712,7 +712,7 @@ class dns(ClientWrapper):
                     "type": str
                 },
                 "--query-timeout": {
-                    "help": "Timeout in second to wait for a socekt reply.",
+                    "help": "Timeout in second to wait for a socket reply.",
                     "nargs": 1,
                     "default": [1],
                     "type":  int

@@ -29,7 +29,8 @@ from random import choice
 from utils.prompt import Prompt
 from sys import exit, stdin
 from platform import system
-from select import poll, POLLIN
+if system() != "Windows":
+    from select import poll, POLLIN
 from time import sleep
 from sotp.misticathread import ServerOverlay, ServerWrapper
 

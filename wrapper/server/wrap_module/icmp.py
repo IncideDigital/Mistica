@@ -19,25 +19,41 @@
 #
 from sotp.misticathread import ServerWrapper
 from base64 import urlsafe_b64encode,urlsafe_b64decode
-
-
-def getServerDependency():
-    return icmpwrapper.SERVER_NAME
-
-def getInstance(id, qsotp, args, logger):
-    return icmpwrapper(id, qsotp, args, logger)
-
+from wrapper.server.wrap_server.icmpserver import icmpserver
 
 class icmpwrapper(ServerWrapper):
-    SERVER_NAME = "icmpserver"
+    
+    SERVER_CLASS = icmpserver
+    NAME = "icmp"
+    CONFIG = {
+                "prog": "icmp",
+                "wrapserver": "icmpserver",
+                "description": "Encodes/Decodes data in ICMP echo requests/responses on data section",
+                "args": [
+                    {
+                        "--max-size": {
+                            "help": "Max size of the SOTP packet. Default is 1024 bytes",
+                            "nargs": 1,
+                            "default": [1024],
+                            "type":  int
+                        },
+                        "--max-retries": {
+                            "help": "Maximum number of re-synchronization retries.",
+                            "nargs": 1,
+                            "default": [5],
+                            "type":  int
+                        }
+                    }
+                ]
+            }
 
     def __init__(self, id, qsotp, args, logger):
-        ServerWrapper.__init__(self, id, "icmp", qsotp, icmpwrapper.SERVER_NAME, logger)
+        ServerWrapper.__init__(self, id, icmpwrapper.NAME, qsotp, icmpwrapper.SERVER_CLASS.NAME, args, logger)
         # Base args
         self.max_size = None
         self.max_retries = None
         # Parsing args
-        self.argparser = self.generateArgParse(self.name)
+        self.argparser = self.generateArgParser()
         self.parseArguments(args)
         # Logger parameters
         self.logger = logger

@@ -1,1 +1,1 @@
-__all__ = ["http", "dns"]
+__all__ = ["http", "dns", "icmp"]

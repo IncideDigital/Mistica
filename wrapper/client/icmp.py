@@ -24,11 +24,6 @@ from sotp.core import BYTE,Header,OptionalHeader,Sizes
 import socket, select
 from utils.icmp import Packet
 
-
-def getInstance(qsotp, args, logger):
-    return icmp(qsotp, args, logger)
-
-
 class ICMPClient(object):
 
     def __init__(self, hostname, request_timeout, name, logger):
@@ -65,13 +60,60 @@ class icmp(ClientWrapper):
     # 65535 bytes (Max IP Packet) - 20 bytes (IP Header) - 8 bytes (ICMP Header) 
     # = 65507 bytes; see rfc 792 for more info
     MAX_ICMP_DATA_LEN = 65507
+    
+    NAME = "icmp"
+    
+    CONFIG = {
+                "prog": "icmp",
+                "description": "Encodes/Decodes data in the data section of ICMP Echo requests/responses",
+                "args": [
+                    {
+                        "--hostname": {
+                            "help": "Remote Server Addresses (not working for 127.0.0.1, localhost, etc)",
+                            "nargs": 1,
+                            "type": str,
+                            "required": 1
+                        },
+                        "--request-timeout": {
+                            "help": "Timeout in second to wait for a socket reply.",
+                            "nargs": 1,
+                            "default": [1],
+                            "type":  int
+                        },
+                        "--max-size": {
+                            "help": "Maximum size in bytes of the sotp packet to be embedded in the icmp data section (49120 bytes max)",
+                            "nargs": 1,
+                            "default": [1024],
+                            "type":  int
+                        },
+                        "--poll-delay": {
+                            "help": "Time in seconds between pollings (in order not to saturate when not transmitting)",
+                            "nargs": 1,
+                            "default": [3],
+                            "type":  int
+                        },
+                        "--response-timeout": {
+                            "help": "Waiting time in seconds for wrapper data.",
+                            "nargs": 1,
+                            "default": [2],
+                            "type":  int
+                        },
+                        "--max-retries": {
+                            "help": "Maximum number of re-synchronization retries.",
+                            "nargs": 1,
+                            "default": [10],
+                            "type":  int
+                        }
+                    }
+                ]
+            }
 
     def __init__(self, qsotp, args, logger):
         ClientWrapper.__init__(self,type(self).__name__,qsotp,logger)
         self.name = type(self).__name__
         self.exit = False
         # Generate argparse
-        self.argparser = self.generateArgParse(self.name)
+        self.argparser = self.generateArgParser()
         # Parse arguments
         self.hostname = None
         self.request_timeout = None

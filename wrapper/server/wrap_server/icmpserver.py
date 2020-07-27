@@ -27,12 +27,35 @@ from utils.prompt import Prompt
 import socket, select
 from utils.icmp import Packet
 
-
-def getInstance(id, args, logger):
-    return icmpserver(id, args, logger)
-
-
 class icmpserver(Thread):
+    
+    NAME = "icmpserver"
+    CONFIG = {
+                "prog": "icmpserver",
+                "description": "Simple ICMP Server",
+                "args": [
+                    {
+                        "--iface": {
+                            "help": "Network interface to bind (Ex: eth0, wlp2s0, etc)",
+                            "nargs": 1,
+                            "type": str,
+                            "required": 1
+                        },
+                        "--timeout": {
+                            "help": "Max time, in seconds, that the server will wait for the SOTP layer to reply, before returning an error. Default is 5",
+                            "nargs": 1,
+                            "default": [5],
+                            "type" :  int
+                        },
+                        "--request-timeout": {
+                            "help": "Max time, in seconds, that the server will wait blocked on raw socket",
+                            "nargs": 1,
+                            "default": [3],
+                            "type" :  int
+                        }
+                    }
+                ]
+            }
 
     def __init__(self, id, args, logger):
         Thread.__init__(self)
@@ -47,7 +70,7 @@ class icmpserver(Thread):
         self.timeout = None
         self.request_timeout = None
         # Argparsing
-        self.argparser = self.generateArgParse(self.name)
+        self.argparser = self.generateArgParser()
         self.parseArguments(args)
         # Logger parameters
         self.logger = logger
@@ -62,18 +85,14 @@ class icmpserver(Thread):
         self.timeout = parsed.timeout[0]
         self.request_timeout = parsed.request_timeout[0]
 
-    def generateArgParse(self, name):
-        filepath = f"./wrapper/server/wrap_server/{name}/config.json"
-        config = ""
-        with open(filepath, 'r') as f:
-            config = load(f)
+    def generateArgParser(self):
+        config = self.CONFIG
+
         parser = ArgumentParser(prog=config["prog"],description=config["description"])
         for arg in config["args"]:
             for name,field in arg.items():
                 opts = {}
                 for key,value in field.items():
-                    if key == "type":
-                        value = Prompt.getType(value)
                     opts[key] = value
                 parser.add_argument(name, **opts)
         return parser

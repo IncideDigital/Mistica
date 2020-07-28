@@ -1,7 +1,11 @@
 # Mística
 
+| ![Mística Logo](mistica.png) |
+|:----------: |
+| Mística Logo by [JoelGMSec](https://twitter.com/joelgmsec) |
+
 Mística is a tool that allows to embed data into application layer protocol fields, with the goal of establishing a bi-directional channel for arbitrary communications.
-Currently, encapsulation into HTTP and DNS protocols has been implemented, but more protocols are expected to be introduced in the near future.
+Currently, encapsulation into HTTP, DNS and ICMP protocols has been implemented, but more protocols are expected to be introduced in the near future.
 
 Mística has a modular design, built around a custom transport protocol, called SOTP: Simple Overlay Transport Protocol. Data is encrypted, chunked and put into SOTP packets. SOTP packets are encoded and embedded into the desired field of the application protocol, and sent to the other end.
 
@@ -19,8 +23,8 @@ Also, the user can easily fork current modules in order to use some custom field
 
 There are two main pieces of sofware:
 
-- Mística server (`ms.py`): Uses modules that act as the server of the desired application layer protocol (HTTP, DNS...). It is also designed in a way that will allow for multiple servers, wrappers and overlays to be run at the same time, with just one instance of `ms.py`, although this feature is not fully implemented yet.
-- Mística client (`mc.py`): Uses modules that act as the client of the desired applicarion layer protocol (HTTP, DNS...). It can only use one overlay and one wrapper at the same time.
+- Mística server (`ms.py`): Uses modules that act as the server of the desired application layer protocol (HTTP, DNS, ICMP...). It is also designed in a way that will allow for multiple servers, wrappers and overlays to be run at the same time, with just one instance of `ms.py`, although this feature is not fully implemented yet.
+- Mística client (`mc.py`): Uses modules that act as the client of the desired applicarion layer protocol (HTTP, DNS, ICMP...). It can only use one overlay and one wrapper at the same time.
 
 ## Demos
 
@@ -207,7 +211,19 @@ In order to illustrate the different methods of DNS encapsulation, the IO redire
 
 ### ICMP
 
-In order to illustrate the different methods of ICMP encapsulation, the IO redirection overlay module (`io`) will be used for every example.
+The Linux kernel, when it receives an icmp echo request package, by default automatically responds with an icmp echo reply package (without giving us any option to reply). That's why we have to disable icmp responses to be able to send our own with data that differs from that sent by the client. To do this, we do the following:
+
+Disable automatic icmp responses by the kernel (*root required*) editing `/etc/sysctl.conf` file:
+
+- Add the following line to your /etc/sysctl.conf:
+
+```
+net.ipv4.icmp_echo_ignore_all=1
+```
+
+- Then, run: `sysctl -p` to take effect.
+
+Now, in order to illustrate the different methods of ICMP encapsulation, the IO redirection overlay module (`io`) will be used for every example.
 
 - ICMP Data Section, using interface eth0:
   - Mística Server: `./ms.py -m io:icmp -k "rc4testkey" -s "--iface eth0"`

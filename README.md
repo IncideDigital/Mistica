@@ -284,11 +284,11 @@ sudo docker build --tag mistica:latest .
 ```
 sudo docker network create misticanw
 ```
-* Third run the server with (**BEWARE of the volume, change the path to this directory**):
+* Third run the server with:
 ```
 sudo docker run --network misticanw --sysctl net.ipv4.icmp_echo_ignore_all=1 -v $(pwd):/opt/Mistica -it mistica /bin/bash
 ```
-* Fourth run the client with (**BEWARE of the volume, change the path to this directory**):
+* Fourth run the client with:
 ```
 sudo docker run --network misticanw -v $(pwd):/opt/Mistica -it mistica /bin/bash
 ```

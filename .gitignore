@@ -9,3 +9,8 @@ dist
 *.zip
 docs
 tests
+mc.spec
+ms.spec
+mc
+ms
+*.pem

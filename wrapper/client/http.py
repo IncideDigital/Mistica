@@ -19,8 +19,9 @@
 #
 from utils.messaging import Message, MessageType, SignalType
 from sotp.misticathread import ClientWrapper
-from http.client import HTTPConnection
+from http.client import HTTPConnection, HTTPSConnection
 from base64 import urlsafe_b64encode,urlsafe_b64decode
+from ssl import _create_unverified_context
 
 class http(ClientWrapper):
 
@@ -83,6 +84,11 @@ class http(ClientWrapper):
                                 506,507,508,510,511],
                     "type":  int
                 },
+                "--proxy": {
+                    "help": "Proxy Address for tunneling communication format 'ip:port'",
+                    "nargs": 1,
+                    "type": str
+                },
                 "--max-size": {
                     "help": "Maximum size in bytes of the SOTP packet. You can change it depending http method used (see rfc2616 page 69)",
                     "nargs": 1,
@@ -106,6 +112,10 @@ class http(ClientWrapper):
                     "nargs": 1,
                     "default": [20],
                     "type":  int
+                },
+                "--ssl": {
+                    "help": "Flag to indicate that SSL will be used.",
+                    "action": "store_true"
                 }
             }
         ]
@@ -131,10 +141,12 @@ class http(ClientWrapper):
         self.header = args.header[0] if args.header is not None else None
         self.post_field = args.post_field[0] if args.post_field is not None else None
         self.success_code = args.success_code[0]
+        self.proxy = args.proxy[0] if args.proxy is not None else None
         self.max_size = args.max_size[0]
         self.poll_delay = args.poll_delay[0]
         self.response_timeout = args.response_timeout[0]
         self.max_retries = args.max_retries[0]
+        self.ssl = args.ssl
 
     def doReqInURI(self, conn, content, method):
         data_headers = {"Content-type": "application/x-www-form-urlencoded","Accept": "text/plain"}
@@ -194,7 +206,22 @@ class http(ClientWrapper):
     def wrap(self,content):
         self._LOGGING_ and self.logger.debug(f"[{self.name}] wrap: {len(content)} bytes")
         packedSotp = self.packSotp(content)
-        conn = HTTPConnection(self.hostname, self.port,self.timeout)
+
+        if self.proxy:
+            proxy_ip, proxy_port = self.proxy.split(":")
+
+            if self.ssl:
+                conn = HTTPSConnection(self.hostname, self.port, timeout=self.timeout, context=_create_unverified_context())
+            else:
+                conn = HTTPConnection(proxy_ip, proxy_port, self.timeout)
+            
+            conn.set_tunnel(self.hostname, self.port)
+        else:
+            if self.ssl:
+                conn = HTTPSConnection(self.hostname, self.port, timeout=self.timeout, context=_create_unverified_context())
+            else:
+                conn = HTTPConnection(self.hostname, self.port, self.timeout)
+
         data_response, code_response = self.dispatchByMethod(conn, packedSotp)
         conn.close()
         self.inbox.put(self.messageToWrapper((data_response,code_response)))

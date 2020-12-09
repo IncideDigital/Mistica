@@ -5,7 +5,7 @@
 | Mística Logo by [JoelGMSec](https://twitter.com/joelgmsec) |
 
 Mística is a tool that allows to embed data into application layer protocol fields, with the goal of establishing a bi-directional channel for arbitrary communications.
-Currently, encapsulation into HTTP, DNS and ICMP protocols has been implemented, but more protocols are expected to be introduced in the near future.
+Currently, encapsulation into HTTP, HTTPS, DNS and ICMP protocols has been implemented, but more protocols are expected to be introduced in the near future.
 
 Mística has a modular design, built around a custom transport protocol, called SOTP: Simple Overlay Transport Protocol. Data is encrypted, chunked and put into SOTP packets. SOTP packets are encoded and embedded into the desired field of the application protocol, and sent to the other end.
 
@@ -23,8 +23,8 @@ Also, the user can easily fork current modules in order to use some custom field
 
 There are two main pieces of sofware:
 
-- Mística server (`ms.py`): Uses modules that act as the server of the desired application layer protocol (HTTP, DNS, ICMP...). It is also designed in a way that will allow for multiple servers, wrappers and overlays to be run at the same time, with just one instance of `ms.py`, although this feature is not fully implemented yet.
-- Mística client (`mc.py`): Uses modules that act as the client of the desired applicarion layer protocol (HTTP, DNS, ICMP...). It can only use one overlay and one wrapper at the same time.
+- Mística server (`ms.py`): Uses modules that act as the server of the desired application layer protocol (HTTP, HTTPS, DNS, ICMP...). It is also designed in a way that will allow for multiple servers, wrappers and overlays to be run at the same time, with just one instance of `ms.py`, although this feature is not fully implemented yet.
+- Mística client (`mc.py`): Uses modules that act as the client of the desired applicarion layer protocol (HTTP, HTTPS, DNS, ICMP...). It can only use one overlay and one wrapper at the same time.
 
 ## Demos
 
@@ -59,7 +59,7 @@ Overlay modules:
 Wrap modules:
 
 - `dns`: Encodes/Decodes data in DNS queries/responses using different methods
-- `http`: Encodes/Decodes data in HTTP requests/responses using different methods
+- `http`: Encodes/Decodes data in HTTP or HTTPS requests/responses using different methods
 - `icmp`: Encodes/Decodes data in ICMP echo requests/responses on data section
 
 ## Usage
@@ -175,8 +175,16 @@ In order to illustrate the different methods of HTTP encapsulation, the IO redir
   - Mística Server: `./ms.py -m io:http -k "rc4testkey" -w "--method POST --post-field data" -s "--error-file /tmp/custom_error_template.html --error-code 408"`
   - Mística Client: `./mc.py -m io:http -k "rc4testkey" -w "--method POST --post-field data"`
 - HTTP GET method with b64 encoding in the default URI, using **custom HTTP response code** and using localhost and port 8080 (default values):
-  - Mística Server: `./ms.py -m io:http -k test -w "--success-code 302"`
-  - Mística Client: `./mc.py -m io:http -k test -w "--success-code 302"`
+  - Mística Server: `./ms.py -m io:http -k "rc4testkey" -w "--success-code 302"`
+  - Mística Client: `./mc.py -m io:http -k "rc4testkey" -w "--success-code 302"`
+- HTTPS GET method with b64 encoding in the default URI using 443 port. A certificate must be generated in Mistica Server to use the ssl option, the Mistica Client only needs to receive the ssl flag:
+  - Mística Server:
+      - `openssl req -new -x509 -keyout server.pem -out server.pem -days 365 -nodes`
+      - `sudo ./ms.py -m io:http -k "rc4testkey" -s "--port 443 --ssl --ssl-cert server.pem"`
+  - Mística Client: `./mc.py -m io:http -k "rc4testkey" -w "--ssl --port 443"`
+- HTTP GET method with b64 encoding in the default URI, using proxy server in Mistica Client (can be used in environments where HTTP communication must necessarily pass through a corporate proxy, which is not specified in the computer configuration). Test the following example with Burpsuite:
+  - Mística Server: `./ms.py -m io:http -k "rc4testkey" -s "--port 8000 --timeout 30"`
+  - Mística Client:  `./mc.py -m io:http -k "rc4testkey" -w "--proxy 127.0.0.1:8080 --port 8000 --poll-delay 30 --response-timeout 30"`
 
 ### DNS
 
@@ -293,6 +301,40 @@ sudo docker run --network misticanw --sysctl net.ipv4.icmp_echo_ignore_all=1 -v 
 sudo docker run --network misticanw -v $(pwd):/opt/Mistica -it mistica /bin/bash
 ```
 
+## How to compile
+
+Mística is a tool developed in Python, which means that, theoretically, it can be compiled.
+
+To compile the tool we will use [Pyinstaller](https://www.pyinstaller.org/), this tool will allow us to generate a binary (depending on the operating system we are in), this means that we can NOT do Cross-compiling as in other languages like C, C++, Golang, Rust, etc. **We are working on a way to make this possible**, however, we leave you with the Pyinstaller command that will allow us to compile Mística in any operating system:
+
+* First, install pyinstaller for Python3.7:
+```
+python3.7 -m pip install pyinstaller --user
+```
+
+* And now, compile Mistica Client:
+```
+pyinstaller --onefile \
+  --hiddenimport overlay.client.io \
+  --hiddenimport overlay.client.shell \
+  --hiddenimport overlay.client.tcpconnect \
+  --hiddenimport overlay.client.tcplisten \
+  --hiddenimport wrapper.client.http \
+  --hiddenimport wrapper.client.dns \
+  --hiddenimport wrapper.client.icmp \
+  --hiddenimport overlay.server.io \
+  --hiddenimport overlay.server.shell \
+  --hiddenimport overlay.server.tcpconnect \
+  --hiddenimport overlay.server.tcplisten \
+  --hiddenimport wrapper.server.wrap_module.http \
+  --hiddenimport wrapper.server.wrap_module.dns \
+  --hiddenimport wrapper.server.wrap_module.icmp \
+  --hiddenimport wrapper.server.wrap_server.httpserver \
+  --hiddenimport wrapper.server.wrap_server.dnsserver \
+  --hiddenimport wrapper.server.wrap_server.icmpserver \
+  mc.py
+```
+
 ## Future work
 
 - Transparent Diffie-Hellman key generation for SOTP protocol
@@ -300,7 +342,6 @@ sudo docker run --network misticanw -v $(pwd):/opt/Mistica -it mistica /bin/bash
 - Multi-Handler mode: Interactive mode for `ms.py`. This will let the user combine more than one overlay with more than one wrapper and more than one wrap module per wrap server.
 - Module development documentation for custom module development. This is discouraged right now as module specification is still under development.
 - Next modules:
-    - HTTPS wrapper
     - SMB wrapper
     - RAT and RAT handler overlay
     - SOCKS proxy and dynamic port forwarding overlay

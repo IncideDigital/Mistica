@@ -24,6 +24,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from argparse import ArgumentParser
 from utils.prompt import Prompt
 from cgi import FieldStorage
+from ssl import wrap_socket
 
 
 class WrapHTTPServer(ThreadingHTTPServer):
@@ -179,6 +180,15 @@ class httpserver(Thread, BaseHTTPRequestHandler):
                     "help": "HTTP Code for custom http code when timeout expires.",
                     "nargs": 1,
                     "type": int
+                },
+                "--ssl": {
+                    "help": "Flag to indicate that SSL will be used",
+                    "action": "store_true"
+                },
+                "--ssl-cert": {
+                    "help": "Path of the ssl certificate file. You can generate one with the following command: 'openssl req -new -x509 -keyout server.pem -out server.pem -days 365 -nodes'",
+                    "nargs": 1,
+                    "type": str
                 }
             }
         ]
@@ -217,6 +227,8 @@ class httpserver(Thread, BaseHTTPRequestHandler):
         self.timeout = parsed.timeout[0]
         self.error_file = parsed.error_file[0] if parsed.error_file else None
         self.error_code = parsed.error_code[0] if parsed.error_code else None
+        self.ssl = parsed.ssl
+        self.ssl_cert = parsed.ssl_cert[0] if parsed.ssl_cert else None
 
     def SignalThread(self):
         while True:
@@ -237,6 +249,11 @@ class httpserver(Thread, BaseHTTPRequestHandler):
                 httpserverHandler,self.wrappers,self.name,
                 self.id, self.timeout, self.error_file, 
                 self.error_code, self.logger)
+        
+        # Checking if SSL should be used
+        if self.ssl and self.ssl_cert:
+            self.server.socket = wrap_socket(self.server.socket,certfile=self.ssl_cert, server_side=True)
+        
         st = Thread(target=self.SignalThread)
         st.start()
         self.server.serve_forever()

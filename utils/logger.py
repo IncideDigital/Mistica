@@ -20,7 +20,7 @@
 from logging import DEBUG, INFO, ERROR
 from logging import Formatter, FileHandler, getLogger
 from glob import glob as Glob
-from os import remove as Remove
+from os import path, mkdir, remove as Remove
 
 formatter = Formatter('%(asctime)s - %(message)s')
 
@@ -41,10 +41,13 @@ class Log():
             self.exc = self.setup_logger('exception_log', f"logs/exception{prefix}.log",ERROR)
 
     def clearFiles(self,prefix):
-        files = Glob(f"logs/*{prefix}.log")
-        for f in files:
-            Remove(f)
-        
+        if path.exists("logs"):
+            files = Glob(f"logs/*{prefix}.log")
+            for f in files:
+                Remove(f)
+        else:
+            mkdir("logs")
+
     def setup_logger(self, name, log_file, level):
         handler = FileHandler(log_file)        
         handler.setFormatter(formatter)

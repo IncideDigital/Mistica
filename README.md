@@ -307,12 +307,18 @@ Mística is a tool developed in Python, which means that, theoretically, it can 
 
 To compile the tool we will use [Pyinstaller](https://www.pyinstaller.org/), this tool will allow us to generate a binary (depending on the operating system we are in), this means that we can NOT do Cross-compiling as in other languages like C, C++, Golang, Rust, etc. **We are working on a way to make this possible**, however, we leave you with the Pyinstaller command that will allow us to compile Mística in any operating system:
 
-* First, install pyinstaller for Python3.7:
+### Compile Mistica Client
+
+As Mística Client has no dependencies, it can be compiled directly with Pyinstaller. To compile it follow the following steps:
+
+* First, install pyinstaller for Python3.7 or higher:
+
 ```
 python3.7 -m pip install pyinstaller --user
 ```
 
-* And now, compile Mistica Client:
+* And now, compile Mística Client with the following command:
+
 ```
 pyinstaller --onefile \
   --hiddenimport overlay.client.io \
@@ -335,10 +341,43 @@ pyinstaller --onefile \
   mc.py
 ```
 
+### Compile Mistica Server
+
+If you want to compile Mística Server you need to install, with Pip, Dnslib library in a global (remember that it is the only dependency of Mística, and only for the Mística Server). To do this you need to follow the following steps:
+
+* First, install Python3.7 or higher on your Windows, Linux or Mac system.
+* Second, install, with Pip, the Dnslib library: `pip install dnslib` (without the "--user" flag, this way it will be installed globally on the system, otherwise, pyinstaller will not be able to add it as hidden import. This step requires administrator permissions)
+* Thirdly, install, with Pip, the Pyinstaller library: `pip install pyinstaller`.
+* And fourth, compile Mística Server with the following command:
+
+```
+pyinstaller --onefile \
+  --hiddenimport overlay.client.io \
+  --hiddenimport overlay.client.shell \
+  --hiddenimport overlay.client.tcpconnect \
+  --hiddenimport overlay.client.tcplisten \
+  --hiddenimport wrapper.client.http \
+  --hiddenimport wrapper.client.dns \
+  --hiddenimport wrapper.client.icmp \
+  --hiddenimport overlay.server.io \
+  --hiddenimport overlay.server.shell \
+  --hiddenimport overlay.server.tcpconnect \
+  --hiddenimport overlay.server.tcplisten \
+  --hiddenimport wrapper.server.wrap_module.http \
+  --hiddenimport wrapper.server.wrap_module.dns \
+  --hiddenimport wrapper.server.wrap_module.icmp \
+  --hiddenimport wrapper.server.wrap_server.httpserver \
+  --hiddenimport wrapper.server.wrap_server.dnsserver \
+  --hiddenimport wrapper.server.wrap_server.icmpserver \
+  --hiddenimport dnslib \
+  ms.py
+```
+
+
 ## Future work
 
+- Cross-Compiling method to be able to compile Mistica for different operating systems without having to do so from the target operating system.
 - Transparent Diffie-Hellman key generation for SOTP protocol
-- Payload Generator: Instead of using `./mc.py`, this will allow generating specific and minimalistic standalone binary clients with hardcoded parameters.
 - Multi-Handler mode: Interactive mode for `ms.py`. This will let the user combine more than one overlay with more than one wrapper and more than one wrap module per wrap server.
 - Module development documentation for custom module development. This is discouraged right now as module specification is still under development.
 - Next modules:
@@ -346,6 +385,7 @@ pyinstaller --onefile \
     - RAT and RAT handler overlay
     - SOCKS proxy and dynamic port forwarding overlay
     - File Transfer overlay
+    - RDP wrapper
 - Custom HTTP templates for more complex encapsulation
 - SOTP protocol specification documentation for custom clients or servers. This is discouraged right now as the protocol is still under development.
 
